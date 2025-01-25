@@ -4,7 +4,7 @@
 #include <sf_libs/CLI11.hpp>
 
 int main(int argc, char** argv) {
-
+//
     RNG::seed();
 
     App::Settings settings;
