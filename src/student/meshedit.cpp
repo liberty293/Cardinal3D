@@ -77,15 +77,18 @@ std::optional<Halfedge_Mesh::VertexRef> Halfedge_Mesh::collapse_face(Halfedge_Me
 std::optional<Halfedge_Mesh::EdgeRef> Halfedge_Mesh::flip_edge(Halfedge_Mesh::EdgeRef e) {
     std::vector<HalfedgeRef> h;
     std::vector<VertexRef> v;
+    std::vector<EdgeRef> eR;
     HalfedgeRef hcurrent = e->halfedge();
-    //collect all of the half edges on one face
+    //collect all of the half edges, vertices, edges on one face
     h.push_back(hcurrent);
     v.push_back(hcurrent->vertex());
+    eR.push_back(e);
     hcurrent = hcurrent->next();
     while (h.back() != hcurrent)
     {
         h.push_back(hcurrent);
         v.push_back(hcurrent->vertex());
+        eR.push_back(hcurrent->edge());
         hcurrent = hcurrent->next();
     }
     
@@ -94,15 +97,19 @@ std::optional<Halfedge_Mesh::EdgeRef> Halfedge_Mesh::flip_edge(Halfedge_Mesh::Ed
      while (h.back() != hcurrent)
     {
         h.push_back(hcurrent);
-        if(std::find(v.begin(), v.end(),hcurrent->vertex())==v.end()) //if the vertex is not currently in the vector
+        if(std::find(v.begin(), v.end(),hcurrent->vertex())==v.end()) //if the vertex is not currently in the vector; should happen twice
             v.push_back(hcurrent->vertex());
+        if(std::find(eR.begin(), eR.end(),hcurrent->edge())==eR.end()) //if the edge is not currently in the vector; should happen once
+            eR.push_back(hcurrent->edge());
         hcurrent = hcurrent->next();
     }   
     
-    //TODO: collect edges and faces
-    
+    //collect faces
+    FaceRef f0 = e->halfedge()->face();
+    FaceRef f1 = e->halfedge()->twin()->face();
     HalfedgeRef h0 = e->halfedge();
 
+    //TODO: Reassignment
     return std::nullopt;
 }
 
