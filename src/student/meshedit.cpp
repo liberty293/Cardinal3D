@@ -75,8 +75,34 @@ std::optional<Halfedge_Mesh::VertexRef> Halfedge_Mesh::collapse_face(Halfedge_Me
     flipped edge.
 */
 std::optional<Halfedge_Mesh::EdgeRef> Halfedge_Mesh::flip_edge(Halfedge_Mesh::EdgeRef e) {
+    std::vector<HalfedgeRef> h;
+    std::vector<VertexRef> v;
+    HalfedgeRef hcurrent = e->halfedge();
+    //collect all of the half edges on one face
+    h.push_back(hcurrent);
+    v.push_back(hcurrent->vertex());
+    hcurrent = hcurrent->next();
+    while (h.back() != hcurrent)
+    {
+        h.push_back(hcurrent);
+        v.push_back(hcurrent->vertex());
+        hcurrent = hcurrent->next();
+    }
+    
+    //and then on the other face
+    hcurrent = hcurrent->twin();
+     while (h.back() != hcurrent)
+    {
+        h.push_back(hcurrent);
+        if(std::find(v.begin(), v.end(),hcurrent->vertex())==v.end()) //if the vertex is not currently in the vector
+            v.push_back(hcurrent->vertex());
+        hcurrent = hcurrent->next();
+    }   
+    
+    //TODO: collect edges and faces
+    
+    HalfedgeRef h0 = e->halfedge();
 
-    (void)e;
     return std::nullopt;
 }
 
