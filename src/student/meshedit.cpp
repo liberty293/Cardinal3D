@@ -75,26 +75,39 @@ std::optional<Halfedge_Mesh::VertexRef> Halfedge_Mesh::collapse_face(Halfedge_Me
     flipped edge.
 */
 std::optional<Halfedge_Mesh::EdgeRef> Halfedge_Mesh::flip_edge(Halfedge_Mesh::EdgeRef e) {
+    if(e->on_boundary()) return std::nullopt;
     std::vector<HalfedgeRef> h;
+
     std::vector<VertexRef> v;
     std::vector<EdgeRef> eR;
+    int l1edges = 0;
     HalfedgeRef hcurrent = e->halfedge();
     //collect all of the half edges, vertices, edges on one face
     h.push_back(hcurrent);
     v.push_back(hcurrent->vertex());
     eR.push_back(e);
     hcurrent = hcurrent->next();
-    while (h.back() != hcurrent)
+    l1edges +=1;
+    while (h.front() != hcurrent)
     {
         h.push_back(hcurrent);
         v.push_back(hcurrent->vertex());
         eR.push_back(hcurrent->edge());
         hcurrent = hcurrent->next();
+        l1edges++;
     }
     
-    //and then on the other face
+    //and then on the other face; hcurrent = h on edge
     hcurrent = hcurrent->twin();
-     while (h.back() != hcurrent)
+    HalfedgeRef htw = hcurrent;
+    h.push_back(hcurrent);
+    if(std::find(v.begin(), v.end(),hcurrent->vertex())==v.end()) //if the vertex is not currently in the vector; should happen twice
+        v.push_back(hcurrent->vertex());
+    if(std::find(eR.begin(), eR.end(),hcurrent->edge())==eR.end()) //if the edge is not currently in the vector; should happen once
+        eR.push_back(hcurrent->edge());
+    hcurrent = hcurrent->next();
+ 
+     while (htw != hcurrent)
     {
         h.push_back(hcurrent);
         if(std::find(v.begin(), v.end(),hcurrent->vertex())==v.end()) //if the vertex is not currently in the vector; should happen twice
@@ -102,15 +115,56 @@ std::optional<Halfedge_Mesh::EdgeRef> Halfedge_Mesh::flip_edge(Halfedge_Mesh::Ed
         if(std::find(eR.begin(), eR.end(),hcurrent->edge())==eR.end()) //if the edge is not currently in the vector; should happen once
             eR.push_back(hcurrent->edge());
         hcurrent = hcurrent->next();
-    }   
+
+    } 
+
+    
     
     //collect faces
     FaceRef f0 = e->halfedge()->face();
     FaceRef f1 = e->halfedge()->twin()->face();
-    HalfedgeRef h0 = e->halfedge();
+    
+    //reassign
+    h.at(0) -> next() = h.at(2);
+    h.at(0) -> vertex() = v.at(l1edges);
+    h.at(0) -> twin() = h.at(l1edges);
+    h.at(0) -> edge() = e; //unchanged
+    h.at(0) -> face() = f0; //unchanged
+
+    h.at(l1edges) -> next() = h.at(l1edges + 2) ;
+    h.at(l1edges) -> vertex() = v.at(2);
+    h.at(l1edges) -> twin() = h.at(0);
+    h.at(l1edges) -> edge() = e;
+    h.at(l1edges) -> face() = f1;
+
+    h.at(l1edges-1) -> next() = h.at(l1edges+1);
+    h.at(l1edges-1) -> face() = f0; //this should stay the same
+
+
+    h.at(l1edges+1) -> next() = h.at(0);
+    h.at(l1edges+1) -> face() = f0;
+
+    h.back() -> next() = h.at(1);
+    h.back() -> face() = f1; //this should be unchanged
+
+    h.at(1) -> next() = h.at(l1edges);
+    h.at(1) -> face() = f1;
+    
+    v.at(0) -> halfedge() = h.at(l1edges+1);
+    v.at(1) -> halfedge() = h.at(1);
+
+    e -> halfedge() = h.at(0);
+    f0 -> halfedge() = h.at(0);
+    f1 -> halfedge() = h.at(l1edges);
+
+
+
+ 
+
+    
 
     //TODO: Reassignment
-    return std::nullopt;
+    return e;
 }
 
 /*
