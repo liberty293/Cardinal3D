@@ -2,6 +2,7 @@
 #include <queue>
 #include <set>
 #include <unordered_map>
+#include <iostream>
 
 #include "../geometry/halfedge.h"
 #include "debug.h"
@@ -160,7 +161,7 @@ std::optional<Halfedge_Mesh::EdgeRef> Halfedge_Mesh::flip_edge(Halfedge_Mesh::Ed
 
 
  
-
+    
     
 
     //TODO: Reassignment
@@ -174,8 +175,124 @@ std::optional<Halfedge_Mesh::EdgeRef> Halfedge_Mesh::flip_edge(Halfedge_Mesh::Ed
 */
 std::optional<Halfedge_Mesh::VertexRef> Halfedge_Mesh::split_edge(Halfedge_Mesh::EdgeRef e) {
 
-    (void)e;
-    return std::nullopt;
+    //TODO: check if triangle
+    //collect
+    std::vector<HalfedgeRef> h;
+    std::vector<VertexRef> v;
+    std::vector<EdgeRef> eR;
+
+    HalfedgeRef hcurrent = e->halfedge();
+    //collect all of the half edges, vertices, edges on one face
+    h.push_back(hcurrent);
+    v.push_back(hcurrent->vertex());
+    eR.push_back(e);
+    hcurrent = hcurrent->next();
+
+    while (h.front() != hcurrent)
+    {
+        h.push_back(hcurrent);
+        v.push_back(hcurrent->vertex());
+        hcurrent = hcurrent->next();
+
+    }
+    
+    //and then on the other face; hcurrent = h on edge
+    hcurrent = hcurrent->twin();
+    HalfedgeRef htw = hcurrent;
+    h.push_back(hcurrent);
+    if(std::find(v.begin(), v.end(),hcurrent->vertex())==v.end()) //if the vertex is not currently in the vector; should happen twice
+        v.push_back(hcurrent->vertex());
+
+    hcurrent = hcurrent->next();
+ 
+     while (htw != hcurrent)
+    {
+        h.push_back(hcurrent);
+        if(std::find(v.begin(), v.end(),hcurrent->vertex())==v.end()) //if the vertex is not currently in the vector; should happen twice
+            v.push_back(hcurrent->vertex());
+        hcurrent = hcurrent->next();
+
+    } 
+
+    
+    //collect faces
+    FaceRef f0 = e->halfedge()->face();
+    FaceRef f1 = e->halfedge()->twin()->face();
+
+
+    //create new vertex
+    v.push_back(new_vertex());
+
+    //create new half edges
+    for (int i = 0; i < 6; i++)
+    {
+        h.push_back(new_halfedge());
+    }
+    
+    //create new edges
+    for (int i = 0; i < 3; i++)
+    {
+        eR.push_back(new_edge());
+    }
+    
+    // create new faces
+    FaceRef f2 = new_face();
+    FaceRef f3 = new_face();
+
+    //H should have 12 elements;
+
+ 
+    //now assign like hell
+    h.at(0) -> next() = h.at(3);
+    h.at(0) -> vertex() = v.at(0); // unchanged
+    h.at(0) -> twin() = h.at(11);
+    h.at(0) -> edge() = eR.at(0); //this is e
+    h.at(0) -> face() = f0; //unchanged
+
+    h.at(1) -> next() = h.at(6);
+    h.at(1) -> face() = f2;
+
+    h.at(2) -> next() = h.at(0);
+    h.at(2) -> face() = f0; //unchanged
+
+    h.at(3) -> next() = h.at(2);
+    h.at(3) -> vertex() = v.at(4);
+    h.at(3) -> twin() = h.at(6);
+    h.at(3) -> face() = f0;
+    h.at(3) -> edge() = eR.at(2);
+
+    h.at(4) -> next() = h.at(10);
+    h.at(4) -> face() = f1; //unchanged
+
+    h.at(5) -> next() = h.at(8);
+    h.at(5) -> face() = f3; 
+
+    h.at(6) -> set_neighbors(h.at(7),h.at(3), v.at(2), eR.at(2),f2);
+    h.at(7) -> set_neighbors(h.at(1), h.at(8), v.at(4), eR.at(1), f2);
+    h.at(8) -> set_neighbors(h.at(9),h.at(7),v.at(1),eR.at(1), f3);
+    h.at(9) -> set_neighbors(h.at(5),h.at(10),v.at(4),eR.at(3),f3);
+    h.at(10) -> set_neighbors(h.at(11),h.at(9),v.at(3),eR.at(3),f1);
+    h.at(11) -> set_neighbors(h.at(4),h.at(0),v.at(4),eR.at(0),f1);
+
+    //set vertex
+    v.at(0) -> halfedge() = h.at(4);
+    v.at(1) -> halfedge() = h.at(1);
+    v.at(2) -> halfedge() = h.at(2);
+    v.at(3) -> halfedge() = h.at(5);
+    v.at(4) -> halfedge() = h.at(3);
+    v.at(4) -> pos = .5* (v.at(0) -> pos + v.at(1) -> pos);
+
+    eR.at(0) -> halfedge() = h.at(0);
+    eR.at(1) -> halfedge() = h.at(7);
+    eR.at(2) -> halfedge() = h.at(3);
+    eR.at(3) -> halfedge() = h.at(9);
+    
+    f0 -> halfedge() = h.at(0);
+    f1 -> halfedge() = h.at(4);
+    f3 -> halfedge() = h.at(5);
+    f2 -> halfedge() = h.at(1);
+
+    return v.at(4);
 }
 
 /* Note on the beveling process:
