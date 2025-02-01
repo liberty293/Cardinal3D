@@ -56,9 +56,123 @@ std::optional<Halfedge_Mesh::FaceRef> Halfedge_Mesh::erase_edge(Halfedge_Mesh::E
     the new vertex created by the collapse.
 */
 std::optional<Halfedge_Mesh::VertexRef> Halfedge_Mesh::collapse_edge(Halfedge_Mesh::EdgeRef e) {
+    //return std::nullopt;
+    //collect edges and halfedges
+    std::vector<HalfedgeRef> h;
+    std::vector<EdgeRef> eH;
+    std::vector<HalfedgeRef> kill;
+    std::vector<FaceRef> killF;
 
-    (void)e;
-    return std::nullopt;
+
+    HalfedgeRef fX = e -> halfedge() -> next();
+    bool killfirst = false;
+    if(fX->next()->next()->next()==fX)
+    {
+        killfirst = true;
+        kill.push_back(fX->next());
+        killF.push_back(fX -> face());
+    }
+    HalfedgeRef hcurrent = fX;
+    h.push_back(fX);
+    eH.push_back(fX->edge());
+    hcurrent = hcurrent -> twin() -> next();
+    while (hcurrent != fX)
+    {
+        h.push_back(hcurrent);
+        eH.push_back(hcurrent->edge());
+        hcurrent = hcurrent -> twin() -> next();
+    }
+
+    std::vector<HalfedgeRef> r;
+    std::vector<EdgeRef> eR;
+
+
+    bool killsend = false;
+    fX = e -> halfedge() -> twin() -> next();
+    if(fX->next()->next()->next()==fX)
+    {
+        kill.push_back(fX->next());
+        killF.push_back(fX->face());
+        killsend = true;
+    }
+
+    hcurrent = fX;
+
+    r.push_back(fX);
+    eR.push_back(fX->edge());
+    hcurrent = hcurrent -> twin() -> next();
+    while (hcurrent != r.front())
+    {
+        r.push_back(hcurrent);
+        eR.push_back(hcurrent->edge());
+        hcurrent = hcurrent -> twin() -> next();
+    }
+
+    VertexRef v0 = e->halfedge()->vertex();
+    VertexRef v1 = e->halfedge()->twin()->vertex();
+
+    //reassign
+
+
+    for (unsigned long i = 0; i < h.size(); i++)
+    {
+        h.at(i) -> vertex() = v0;
+        eH.at(i) -> halfedge() = h.at(i); // this shouldnt matter
+    }
+
+    for (unsigned long i = 0; i < r.size(); i++)
+    {
+        r.at(i) -> vertex() = v0; //this should already be set
+        eR.at(i) -> halfedge() = r.at(i); //this should already be set
+    }
+    
+    h.at(0) -> face() -> halfedge() = h.at(0); //ensure face isnt part of deleted halfedge
+    r.at(0) -> face() -> halfedge() = r.at(0);
+    v0->halfedge() = h.at(0);
+    
+    if(killfirst)
+    {
+    h.at(0) -> next() = r.at(r.size()-2) -> next(); //this is the next of second to last element; the element (not the next) will be deleted
+    h.at(0) -> next() -> vertex() -> halfedge() = r.at(r.size()-2) -> next();
+    h.at(0) -> face() = r.at(r.size()-2) -> next() -> face(); //assign it to new face bc that face will be deleated
+    h.at(h.size()-3) -> twin() -> next() = r.at(0);
+    }
+    else
+    {
+        h.at(0) -> face() -> halfedge() = h.at(0); //ensure face isnt part of deleted halfedge
+        r.at(r.size()-2) -> twin() -> next() = h.at(0);
+    }
+
+    if(killsend)
+    {
+    r.at(0) -> next() = h.at(h.size()-2) -> next(); //this is the next of second to last element; the element (not the next) will be deleted
+    r.at(0) -> next() -> vertex() -> halfedge() = h.at(h.size()-2) -> next();
+    r.at(0) -> face() = h.at(h.size()-2) -> next() -> face(); //assign it to new face bc that face will be deleated
+    r.at(r.size()-3) -> twin() -> next() = h.at(0);
+    }
+    else
+    {
+        h.at(h.size()-2) -> twin() -> next() = r.at(0);
+    }
+
+    v0 -> pos = .5* (v0 -> pos + v1 -> pos);
+    //now delete
+    erase(v1);
+    erase(e);
+    erase(e -> halfedge());
+    erase(e -> halfedge() -> twin());
+
+    for (unsigned long i = 0; i < kill.size(); i++)
+    {
+        erase(kill.at(i) -> twin());
+        erase(kill.at(i) -> edge());
+        erase(kill.at(i));
+        erase(killF.at(i));
+    }
+    
+
+
+    return v0;
 }
 
 /*
@@ -76,6 +190,7 @@ std::optional<Halfedge_Mesh::VertexRef> Halfedge_Mesh::collapse_face(Halfedge_Me
     flipped edge.
 */
 std::optional<Halfedge_Mesh::EdgeRef> Halfedge_Mesh::flip_edge(Halfedge_Mesh::EdgeRef e) {
+
     if(e->on_boundary()) return std::nullopt;
     std::vector<HalfedgeRef> h;
 
@@ -176,6 +291,7 @@ std::optional<Halfedge_Mesh::EdgeRef> Halfedge_Mesh::flip_edge(Halfedge_Mesh::Ed
 std::optional<Halfedge_Mesh::VertexRef> Halfedge_Mesh::split_edge(Halfedge_Mesh::EdgeRef e) {
 
     //TODO: check if triangle
+    //TODO: does not handle boundaries
     //collect
     std::vector<HalfedgeRef> h;
     std::vector<VertexRef> v;
