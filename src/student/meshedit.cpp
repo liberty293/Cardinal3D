@@ -36,7 +36,7 @@
     edges and faces with a single face, returning the new face.
  */
 std::optional<Halfedge_Mesh::FaceRef> Halfedge_Mesh::erase_vertex(Halfedge_Mesh::VertexRef v) {
-
+    
     (void)v;
     return std::nullopt;
 }
@@ -482,9 +482,84 @@ std::optional<Halfedge_Mesh::FaceRef> Halfedge_Mesh::bevel_face(Halfedge_Mesh::F
 
     // Reminder: You should set the positions of new vertices (v->pos) to be exactly
     // the same as wherever they "started from."
+    assert(!f->boundary); // f must not be a boundary face
 
-    (void)f;
-    return std::nullopt;
+    // Construct `hes_1, hes_2, hes_3, hes_4, hes_n, vs, nfs, res, ies`
+    // * `he_1` are all the halfedges of the face `f`
+    // * For each `i`, `vs[i]` is the copy of `hes_1[i]->vertex()`
+    // * For each `i`, `nfs[i]` is the new `ring` face associated with `hes_1[i]`
+    // * For each `i`, `hes_1[i]` is on the original face `f`
+    // * For each `i`, `hes_n[i]` is on the inset face
+    // * For each `i`, `res[i]` is the edge associated with `hes_2[i]`
+    // * For each `i`, `ies[i]` is the edge associated with `hes_3[i]`
+    //            he_n
+    //        <-----------
+    //       |    he_3    |
+    //       | he_4  he_2 |
+    //       |    he_1    |
+    //        ----------->
+    FaceRef inset_face = f;
+    std::vector<HalfedgeRef> hes_1, hes_2, hes_3, hes_4, hes_n;
+    std::vector<EdgeRef> res, ies;
+    std::vector<VertexRef> vs;
+    std::vector<FaceRef> nfs;
+    HalfedgeRef he_start = f->halfedge();
+    he_start->vertex();
+    // `he` iterates over all half edges of `f`
+    HalfedgeRef he = he_start;
+    do {
+        hes_1.push_back(he);
+        hes_2.push_back(new_halfedge());
+        hes_3.push_back(new_halfedge());
+        hes_4.push_back(new_halfedge());
+        hes_n.push_back(new_halfedge());
+        res.push_back(new_edge());
+        ies.push_back(new_edge());
+        vs.push_back(new_vertex());
+        nfs.push_back(new_face());
+        he = he->next();
+    } while (he != he_start);
+
+    // Wrap around
+    int n_verts = vs.size();
+    hes_1.push_back(hes_1[0]), hes_2.push_back(hes_2[0]);
+    hes_3.push_back(hes_3[0]), hes_4.push_back(hes_4[0]);
+    hes_n.push_back(hes_n[0]);
+    res.push_back(res[0]), ies.push_back(ies[0]);
+    vs.push_back(vs[0]), nfs.push_back(nfs[0]);
+
+    // Update mesh
+    for (int i = 0; i < n_verts; ++i) {
+        //            he_n
+        //     v4 <----------- v3
+        //       |    he_3    |
+        //       | he_4  he_2 |
+        //       |    he_1    |
+        //     v1 -----------> v2
+        HalfedgeRef he_1 = hes_1[i], he_2 = hes_2[i], he_3 = hes_3[i], he_4 = hes_4[i], he_n = hes_n[i];
+        VertexRef v1 = he_1->vertex(), v2 = he_1->next()->vertex(), v3 = vs[i + 1], v4 = vs[i];
+        EdgeRef e_2 = res[i + 1], e_3 = ies[i], e_4 = res[i];
+        FaceRef nf = nfs[i];
+
+        // Halfedge
+        he_1->_next = he_2, he_1->_face = nf;
+        he_2->set_neighbors(he_3, hes_4[i + 1], v2, e_2, nf);
+        he_3->set_neighbors(he_4, he_n, v3, e_3, nf);
+        HalfedgeRef he_4_twin = (i == 0) ? hes_2[n_verts - 1] : hes_2[i - 1];
+        he_4->set_neighbors(he_1, he_4_twin, v4, e_4, nf);
+        he_n->set_neighbors(hes_n[i + 1], he_3, v4, e_3, inset_face);
+        // Vertex
+        v2->_halfedge = he_2;
+        v3->pos = v2->pos, v3->_halfedge = he_3;
+        // Edge
+        e_2->_halfedge = he_2, e_3->_halfedge = he_3;
+        v4->pos = v1->pos;
+        // Face
+        nf->_halfedge = he_1;
+    }
+
+    inset_face->_halfedge = hes_n[0];
+    return inset_face;
 }
 
 /*
