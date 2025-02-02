@@ -32,6 +32,25 @@
 */
 
 /*
+    Compute the normal of a face, given the coordinates of its vertices
+*/
+Vec3 normal_of_vecs(std::vector<Vec3> positions) {
+    Vec3 n;
+    int n_verts = positions.size();
+    for (int i = 0; i < n_verts; ++i) {
+        n += cross(positions[i], positions[(i + 1) % n_verts]);
+    }
+    return n.unit();
+}
+
+Vec3 barycenter_of_vecs(std::vector<Vec3> positions) {
+    Vec3 avg;
+    int n_verts = positions.size();
+    for (auto p : positions) avg += p;
+    return avg * (1.0 / n_verts);
+}
+
+/*
     This method should replace the given vertex and all its neighboring
     edges and faces with a single face, returning the new face.
  */
@@ -655,13 +674,17 @@ void Halfedge_Mesh::bevel_face_positions(const std::vector<Vec3>& start_position
     do {
         new_halfedges.push_back(h);
         h = h->next();
-    } while(h != face->halfedge());
+    } while (h != face->halfedge());
 
-    (void)new_halfedges;
-    (void)start_positions;
-    (void)face;
-    (void)tangent_offset;
-    (void)normal_offset;
+    int n_verts = new_halfedges.size();
+    Vec3 start_norm = normal_of_vecs(start_positions), start_center = barycenter_of_vecs(start_positions);
+    for (int i = 0; i < n_verts; ++i) {
+        VertexRef v = new_halfedges[i]->vertex();
+        Vec3 pos = start_positions[i];
+        pos -= normal_offset * normal_of_vecs(start_positions);
+        pos += tangent_offset * (start_positions[i] - start_center);
+        v->pos = pos;
+    }
 }
 
 /*
