@@ -128,6 +128,8 @@ std::optional<Halfedge_Mesh::VertexRef> Halfedge_Mesh::collapse_edge(Halfedge_Me
     
     h.at(0) -> face() -> halfedge() = h.at(0); //ensure face isnt part of deleted halfedge
     r.at(0) -> face() -> halfedge() = r.at(0);
+    h.at(0) -> next() -> twin() -> face() -> halfedge() = h.at(0) -> next() -> twin() -> next();
+    r.at(0) -> next() -> twin() -> face() -> halfedge() = r.at(0) -> next() -> twin() -> next();
     v0->halfedge() = h.at(0);
     
     if(killfirst)
