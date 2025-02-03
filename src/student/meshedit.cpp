@@ -32,6 +32,25 @@
 */
 
 /*
+    Compute the normal of a face, given the coordinates of its vertices
+*/
+Vec3 normal_of_vecs(std::vector<Vec3> positions) {
+    Vec3 n;
+    int n_verts = positions.size();
+    for (int i = 0; i < n_verts; ++i) {
+        n += cross(positions[i], positions[(i + 1) % n_verts]);
+    }
+    return n.unit();
+}
+
+Vec3 barycenter_of_vecs(std::vector<Vec3> positions) {
+    Vec3 avg;
+    int n_verts = positions.size();
+    for (auto p : positions) avg += p;
+    return avg * (1.0 / n_verts);
+}
+
+/*
     This method should replace the given vertex and all its neighboring
     edges and faces with a single face, returning the new face.
  */
@@ -486,20 +505,22 @@ std::optional<Halfedge_Mesh::FaceRef> Halfedge_Mesh::bevel_face(Halfedge_Mesh::F
     // the same as wherever they "started from."
     assert(!f->boundary); // f must not be a boundary face
 
-    // Construct `hes_1, hes_2, hes_3, hes_4, hes_n, vs, nfs, res, ies`
-    // * `he_1` are all the halfedges of the face `f`
-    // * For each `i`, `vs[i]` is the copy of `hes_1[i]->vertex()`
-    // * For each `i`, `nfs[i]` is the new `ring` face associated with `hes_1[i]`
-    // * For each `i`, `hes_1[i]` is on the original face `f`
-    // * For each `i`, `hes_n[i]` is on the inset face
-    // * For each `i`, `res[i]` is the edge associated with `hes_2[i]`
-    // * For each `i`, `ies[i]` is the edge associated with `hes_3[i]`
-    //            he_n
-    //        <-----------
-    //       |    he_3    |
-    //       | he_4  he_2 |
-    //       |    he_1    |
-    //        ----------->
+    /* 
+       Construct `hes_1, hes_2, hes_3, hes_4, hes_n, vs, nfs, res, ies`
+       * `he_1` are all the halfedges of the face `f`
+       * For each `i`, `vs[i]` is the copy of `hes_1[i]->vertex()`
+       * For each `i`, `nfs[i]` is the new `ring` face associated with `hes_1[i]`
+       * For each `i`, `hes_1[i]` is on the original face `f`
+       * For each `i`, `hes_n[i]` is on the inset face
+       * For each `i`, `res[i]` is the edge associated with `hes_2[i]`
+       * For each `i`, `ies[i]` is the edge associated with `hes_3[i]`
+                  he_n
+              <-----------
+             |    he_3    |
+             | he_4  he_2 |
+             |    he_1    |
+              ----------->
+    */
     FaceRef inset_face = f;
     std::vector<HalfedgeRef> hes_1, hes_2, hes_3, hes_4, hes_n;
     std::vector<EdgeRef> res, ies;
@@ -532,12 +553,14 @@ std::optional<Halfedge_Mesh::FaceRef> Halfedge_Mesh::bevel_face(Halfedge_Mesh::F
 
     // Update mesh
     for (int i = 0; i < n_verts; ++i) {
-        //            he_n
-        //     v4 <----------- v3
-        //       |    he_3    |
-        //       | he_4  he_2 |
-        //       |    he_1    |
-        //     v1 -----------> v2
+        /*
+                      he_n
+               v4 <----------- v3
+                 |    he_3    |
+                 | he_4  he_2 |
+                 |    he_1    |
+               v1 -----------> v2
+        */
         HalfedgeRef he_1 = hes_1[i], he_2 = hes_2[i], he_3 = hes_3[i], he_4 = hes_4[i], he_n = hes_n[i];
         VertexRef v1 = he_1->vertex(), v2 = he_1->next()->vertex(), v3 = vs[i + 1], v4 = vs[i];
         EdgeRef e_2 = res[i + 1], e_3 = ies[i], e_4 = res[i];
@@ -657,21 +680,115 @@ void Halfedge_Mesh::bevel_face_positions(const std::vector<Vec3>& start_position
     do {
         new_halfedges.push_back(h);
         h = h->next();
-    } while(h != face->halfedge());
+    } while (h != face->halfedge());
 
-    (void)new_halfedges;
-    (void)start_positions;
-    (void)face;
-    (void)tangent_offset;
-    (void)normal_offset;
+    int n_verts = new_halfedges.size();
+    Vec3 start_norm = normal_of_vecs(start_positions), start_center = barycenter_of_vecs(start_positions);
+    for (int i = 0; i < n_verts; ++i) {
+        VertexRef v = new_halfedges[i]->vertex();
+        Vec3 pos = start_positions[i];
+        pos -= normal_offset * normal_of_vecs(start_positions);
+        pos += tangent_offset * (start_positions[i] - start_center);
+        v->pos = pos;
+    }
+}
+
+void Halfedge_Mesh::triangulate_face(FaceRef f) {
+    // Do not triangulate virtual boundary face
+    if (f->boundary)
+        return;
+    HalfedgeRef hi = f->halfedge();
+    // Do not triangulate triangular faces
+    if (hi->next()->next()->next() == hi)
+        return;
+    
+    HalfedgeRef he;
+    /*
+      We use the "fan" triangulation method
+
+      Suppose `f` is a `n`-gon, we will have `n - 3` line segments
+      starting from the `base` vertex that divides `f` into `n - 2` triangles
+
+    vs[i] ---------- vs[i + 1]
+         \ hes_f[i] /
+          \        /
+           \      / hes_radial[i + 1]
+            \    /  es_radial[i + 1]
+             \  /
+              \/
+             base
+    
+      `hes_twin[i]` is the twin of `hes_radial[i]`
+    */
+    VertexRef base = hi->vertex();
+    std::vector<HalfedgeRef> hes_radial, hes_twin, hes_f;
+    std::vector<VertexRef> vs;
+    std::vector<EdgeRef> es_radial;
+    std::vector<FaceRef> fs_n;
+    he = hi;
+    hes_radial.push_back(he), hes_twin.push_back(he->twin());
+    vs.push_back(he->next()->vertex());
+    es_radial.push_back(he->edge());
+    fs_n.push_back(f);
+    do {
+        if (he != hi) {
+            hes_f.push_back(he);
+            if (he != hi->next()) {
+                hes_radial.push_back(new_halfedge());
+                hes_twin.push_back(new_halfedge());
+                vs.push_back(he->vertex());
+                es_radial.push_back(new_edge());
+                fs_n.push_back(new_face());
+            }
+        }
+        he = he->next();
+    } while (he->next() != hi);
+    hes_radial.push_back(he->twin()), hes_twin.push_back(he);
+    vs.push_back(he->vertex());
+    es_radial.push_back(he->edge());
+
+    // Update mesh
+    /*
+            e_2
+    v_2 ------------ v_1
+       \    he_2    /
+        \ he_3     /
+         \   he_1 /
+      e_3 \      / e_1
+           \    /
+            \  /
+             \/
+            base
+    `nf` is the `FaceRef` of the above triangle
+    `he_3` points from `base` to `v_2`, `he_2` points from `v_2` to `v_1`
+    */
+    int n_trgs = fs_n.size();
+    for (int i = 0; i < n_trgs; ++i) {
+        HalfedgeRef he_1 = hes_twin[i + 1], he_2 = hes_f[i], he_3 = hes_radial[i];
+        VertexRef v_1 = vs[i + 1];
+        EdgeRef e_1 = es_radial[i + 1], e_3 = es_radial[i];
+        FaceRef nf = fs_n[i];
+
+        // Halfedge
+        he_1->set_neighbors(he_3, hes_radial[i + 1], v_1, e_1, nf);
+        he_2->_next = he_1, he_2->_face = nf;
+        he_3->set_neighbors(he_2, hes_twin[i], base, e_3, nf);
+        // Edge
+        e_1->_halfedge = he_1, e_3->_halfedge = he_3;
+        // Face
+        nf->_halfedge = he_2;
+    }
 }
 
 /*
     Splits all non-triangular faces into triangles.
 */
 void Halfedge_Mesh::triangulate() {
-
-    // For each face...
+    std::vector<FaceRef> faces_copy;
+    for (FaceRef f = faces.begin(); f != faces.end(); ++f)
+        faces_copy.push_back(f);
+    for (FaceRef f : faces_copy)
+        triangulate_face(f);
 }
 
 /* Note on the quad subdivision process:
