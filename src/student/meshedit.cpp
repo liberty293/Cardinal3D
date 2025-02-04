@@ -1036,6 +1036,15 @@ struct Edge_Record {
         //    Edge_Record::optimal.
         // -> Also store the cost associated with collapsing this edge in
         //    Edge_Record::cost.
+        Halfedge_Mesh::HalfedgeRef he = e->halfedge();
+        Halfedge_Mesh::VertexRef v_1 = he->vertex(), v_2 = he->twin()->vertex();
+        Mat4 edge_quadric = vertex_quadrics[v_1] + vertex_quadrics[v_2], A = edge_quadric;
+        Vec3 b(A[3][0], A[3][1], A[3][2]);
+        A[3][0] = A[3][1] = A[3][2] = A[0][3] = A[1][3] = A[2][3] = 0, A[3][3] = 1;
+        // **TODO:** When A is not invertible
+        optimal = -1 * (A.inverse() * b);
+        Vec4 optimal_(optimal, 1);
+        cost = dot(optimal_, edge_quadric * optimal_);
     }
     Halfedge_Mesh::EdgeRef edge;
     Vec3 optimal;
@@ -1128,6 +1137,28 @@ template<class T> struct PQueue {
     std::set<T> queue;
 };
 
+Mat4 face_quadric(Halfedge_Mesh::FaceRef f) {
+    assert (!f->is_boundary());
+    assert (f->halfedge()->next()->next()->next() == f->halfedge());
+    Vec3 norm = f->normal();
+    Vec4 norm4(norm, -dot(norm, f->halfedge()->vertex()->pos));
+    return outer(norm4, norm4);
+}
+
+Mat4 vertex_quadric(Halfedge_Mesh::VertexRef v, std::unordered_map<Halfedge_Mesh::FaceRef, Mat4> face_quadrics) {
+    Halfedge_Mesh::HalfedgeRef hi = v->halfedge(), he = hi;
+    Mat4 ret(Mat4::Zero);
+    do {
+        Halfedge_Mesh::FaceRef f = he->face();
+        if (!f->is_boundary())
+            ret += face_quadrics[f];
+        he = he->twin()->next();
+    } while (he != hi);
+    return ret;
+}
+
+const int simplification_factor = 4;
+
 /*
     Mesh simplification. Note that this function returns success in a similar
     manner to the local operations, except with only a boolean value.
@@ -1141,14 +1172,29 @@ bool Halfedge_Mesh::simplify() {
     std::unordered_map<EdgeRef, Edge_Record> edge_records;
     PQueue<Edge_Record> edge_queue;
 
+    for (Face f : faces)
+        // If there are non-triangular faces, refuse to simplify
+        if (!f.is_boundary() && f.halfedge()->next()->next()->next() != f.halfedge())
+            return false;
+
     // Compute initial quadrics for each face by simply writing the plane equation
     // for the face in homogeneous coordinates. These quadrics should be stored
     // in face_quadrics
+    for (auto f = faces.begin(); f != faces.end(); ++f)
+        if (!f->is_boundary())
+            face_quadrics[f] = face_quadric(f);
     // -> Compute an initial quadric for each vertex as the sum of the quadrics
     //    associated with the incident faces, storing it in vertex_quadrics
+    for (auto v = vertices.begin(); v != vertices.end(); ++v)
+        vertex_quadrics[v] = vertex_quadric(v, face_quadrics);
     // -> Build a priority queue of edges according to their quadric error cost,
     //    i.e., by building an Edge_Record for each edge and sticking it in the
     //    queue. You may want to use the above PQueue<Edge_Record> for this.
+    for (auto e = edges.begin(); e != edges.end(); ++e) {
+        Edge_Record er(vertex_quadrics, e);
+        edge_records[e] = er;
+        edge_queue.insert(er);
+    }
     // -> Until we reach the target edge budget, collapse the best edge. Remember
     //    to remove from the queue any edge that touches the collapsing edge
     //    BEFORE it gets collapsed, and add back into the queue any edge touching
@@ -1156,12 +1202,49 @@ bool Halfedge_Mesh::simplify() {
     //    a quadric to the collapsed vertex, and to pop the collapsed edge off the
     //    top of the queue.
 
+    size_t target = faces.size() - (face_quadrics.size() - face_quadrics.size() / simplification_factor); //TODO
+    while (faces.size() > target && edge_queue.size()) {
+        Edge_Record top = edge_queue.top();
+        edge_queue.pop();
+        // Erase the two vertices of `top.edge` from `vertex_quadrics`
+        VertexRef v1 = top.edge->halfedge()->vertex(), v2 = top.edge->halfedge()->twin()->vertex();
+        Mat4 new_quardric = vertex_quadrics[v1] + vertex_quadrics[v2];
+        std::vector<VertexRef> two_vertices({v1, v2});
+        for (VertexRef v : two_vertices) {
+            HalfedgeRef hi = v->halfedge(), he = hi;
+            vertex_quadrics.erase(v);
+            do {
+                if (edge_records.find(he->edge()) != edge_records.end()) {
+                    edge_queue.remove(edge_records[he->edge()]);
+                    edge_records.erase(he->edge());
+                }
+                he = he->twin()->next();
+            } while (he != hi);
+        }
+        auto v_collapse_option = collapse_edge_erase(top.edge);
+        assert (v_collapse_option.has_value());
+        VertexRef v_collapse = v_collapse_option.value();
+        {
+            HalfedgeRef hi = v_collapse->halfedge(), he = hi;
+            vertex_quadrics[v_collapse] = new_quardric;
+            do {
+                EdgeRef er = he->edge();
+                if (edge_records.find(er) == edge_records.end()) {
+                    Edge_Record e_rec(vertex_quadrics, er);
+                    edge_records[er] = e_rec;
+                    edge_queue.insert(e_rec);
+                }
+                he = he->twin()->next();
+            } while (he != hi);
+        }
+    }
+
     // Note: if you erase elements in a local operation, they will not be actually deleted
     // until do_erase or validate are called. This is to facilitate checking
     // for dangling references to elements that will be erased.
     // The rest of the codebase will automatically call validate() after each op,
     // but here simply calling collapse_edge() will not erase the elements.
     // You should use collapse_edge_erase() instead for the desired behavior.
-
-    return false;
+    
+    return true;
 }
