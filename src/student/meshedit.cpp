@@ -683,7 +683,8 @@ void Halfedge_Mesh::bevel_face_positions(const std::vector<Vec3>& start_position
     } while (h != face->halfedge());
 
     int n_verts = new_halfedges.size();
-    Vec3 start_norm = normal_of_vecs(start_positions), start_center = barycenter_of_vecs(start_positions);
+    //Vec3 start_norm = normal_of_vecs(start_positions);
+    Vec3  start_center = barycenter_of_vecs(start_positions);
     for (int i = 0; i < n_verts; ++i) {
         VertexRef v = new_halfedges[i]->vertex();
         Vec3 pos = start_positions[i];
@@ -849,11 +850,30 @@ void Halfedge_Mesh::triangulate() {
 */
 void Halfedge_Mesh::linear_subdivide_positions() {
 
+
+
     // For each vertex, assign Vertex::new_pos to
     // its original position, Vertex::pos.
 
+    for (VertexRef v = vertices_begin(); v != vertices_end(); v++)
+    {
+        v -> new_pos = v -> pos;
+    }
+    
+
     // For each edge, assign the midpoint of the two original
     // positions to Edge::new_pos.
+
+    for (EdgeRef e = edges_begin(); e != edges_end(); e++)
+    {
+        e -> new_pos = e -> center();
+    }
+    
+    for (FaceRef f = faces_begin(); f != faces_end() ; f++)
+    {
+        f -> new_pos = f -> center();
+    }
+    
 
     // For each face, assign the centroid (i.e., arithmetic mean)
     // of the original vertex positions to Face::new_pos. Note
