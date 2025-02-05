@@ -82,7 +82,6 @@ std::optional<Halfedge_Mesh::VertexRef> Halfedge_Mesh::collapse_edge(Halfedge_Me
     std::vector<HalfedgeRef> kill;
     std::vector<FaceRef> killF;
 
-
     HalfedgeRef fX = e -> halfedge() -> next();
     bool killfirst = false;
     if(fX->next()->next()->next()==fX)
@@ -311,14 +310,19 @@ std::optional<Halfedge_Mesh::EdgeRef> Halfedge_Mesh::flip_edge(Halfedge_Mesh::Ed
 */
 std::optional<Halfedge_Mesh::VertexRef> Halfedge_Mesh::split_edge(Halfedge_Mesh::EdgeRef e) {
 
-    //TODO: check if triangle
+    HalfedgeRef hcurrent = e->halfedge();
+    // Check both sides are on triangles
+    if (hcurrent->next()->next()->next() != hcurrent)
+        return std::nullopt;
+    if (hcurrent->twin()->next()->next()->next() != hcurrent->twin())
+        return std::nullopt;
+
     //TODO: does not handle boundaries
     //collect
     std::vector<HalfedgeRef> h;
     std::vector<VertexRef> v;
     std::vector<EdgeRef> eR;
 
-    HalfedgeRef hcurrent = e->halfedge();
     //collect all of the half edges, vertices, edges on one face
     h.push_back(hcurrent);
     v.push_back(hcurrent->vertex());
