@@ -65,9 +65,35 @@ std::optional<Halfedge_Mesh::FaceRef> Halfedge_Mesh::erase_vertex(Halfedge_Mesh:
     merged face.
  */
 std::optional<Halfedge_Mesh::FaceRef> Halfedge_Mesh::erase_edge(Halfedge_Mesh::EdgeRef e) {
+    HalfedgeRef he_1 = e->halfedge(), he_2 = he_1->twin();
+    // Refuse to remove if `he_1` and `he_2` have `next` relation
+    if (he_1 == he_2->next() || he_2 == he_1->next())
+        return std::nullopt;
+    HalfedgeRef he_1_nxt = he_1->next(), he_2_nxt = he_2->next();
+    VertexRef v_1 = he_1->vertex(), v_2 = he_2->vertex();
+    // We will use `f_1` for the merged face
+    FaceRef f_1 = he_1->face(), f_2 = he_2->face();
+    // Refuse to remove if the two sides of `e` connect to the same face
+    if (f_1 == f_2)
+        return std::nullopt;
 
-    (void)e;
-    return std::nullopt;
+    HalfedgeRef he_1_prev = he_1;
+    while (he_1_prev->next() != he_1) he_1_prev = he_1_prev->next();
+    HalfedgeRef he_2_prev = he_2;
+    while (he_2_prev->next() != he_2) he_2_prev = he_2_prev->next();
+    
+    he_2_prev->_next = he_1_nxt, he_1_prev->_next = he_2_nxt;
+    HalfedgeRef he = he_1_nxt;
+    do {
+        he->_face = f_1;
+        he = he->next();
+    } while (he != he_1_nxt);
+    v_1->_halfedge = he_2_nxt, v_2->_halfedge = he_1_nxt;
+    f_1->_halfedge = he_1_nxt;
+    f_1->boundary |= f_2->boundary;
+    
+    erase(e), erase(he_1), erase(he_2), erase(f_2);
+    return f_1;
 }
 
 /*
