@@ -1164,7 +1164,7 @@ Mat4 face_quadric(Halfedge_Mesh::FaceRef f) {
     return outer(norm4, norm4);
 }
 
-Mat4 vertex_quadric(Halfedge_Mesh::VertexRef v, std::unordered_map<Halfedge_Mesh::FaceRef, Mat4> face_quadrics) {
+Mat4 vertex_quadric(Halfedge_Mesh::VertexRef v, std::unordered_map<Halfedge_Mesh::FaceRef, Mat4>& face_quadrics) {
     Halfedge_Mesh::HalfedgeRef hi = v->halfedge(), he = hi;
     Mat4 ret(Mat4::Zero);
     do {
