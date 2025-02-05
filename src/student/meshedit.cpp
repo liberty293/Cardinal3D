@@ -1021,6 +1021,8 @@ bool Halfedge_Mesh::isotropic_remesh() {
     return false;
 }
 
+const float invertible_threshold = 1e-6;
+
 /* Helper type for quadric simplification */
 struct Edge_Record {
     Edge_Record() {
@@ -1041,10 +1043,27 @@ struct Edge_Record {
         Mat4 edge_quadric = vertex_quadrics[v_1] + vertex_quadrics[v_2], A = edge_quadric;
         Vec3 b(A[3][0], A[3][1], A[3][2]);
         A[3][0] = A[3][1] = A[3][2] = A[0][3] = A[1][3] = A[2][3] = 0, A[3][3] = 1;
-        // **TODO:** When A is not invertible
-        optimal = -1 * (A.inverse() * b);
-        Vec4 optimal_(optimal, 1);
-        cost = dot(optimal_, edge_quadric * optimal_);
+        if (A.det() > invertible_threshold * pow(e->length(), 3.0)) {
+            // `A` is invertible
+            optimal = -1 * (A.inverse() * b);
+            Vec4 optimal_(optimal, 1);
+            cost = dot(optimal_, edge_quadric * optimal_);
+        } else {
+            // `A` is (approximately) singular
+            float cost_1 = dot(Vec4(v_1->pos, 1.0), edge_quadric * Vec4(v_1->pos, 1.0));
+            float cost_2 = dot(Vec4(v_2->pos, 1.0), edge_quadric * Vec4(v_2->pos, 1.0));
+            Vec3 mid = (v_1->pos + v_2->pos) * 0.5;
+            float cost_mid = dot(Vec4(mid, 1.0), edge_quadric * Vec4(mid, 1.0));
+            // Find `t` such that `(1 - t) v_1 + t v_2` is best
+            // Suppose `cost(t) = a t^2 + b t + c`, then
+            // `c = cost_1, a / 4 + b / 2 + c = cost_mid, a + b + c = cost_2`
+            float a = 2 * (cost_2 - 2 * cost_mid + cost_1), b = cost_2 - cost_1 - a, c = cost_1;
+            float t = (b == 0) ? 0.5 : - a / (2 * b);
+            if (t < 0) t = 0.0;
+            if (t > 1) t = 1.0;
+            optimal = (1 - t) * v_1->pos + t * v_2->pos;
+            cost = a * t * t + b * t + c;
+        }
     }
     Halfedge_Mesh::EdgeRef edge;
     Vec3 optimal;
