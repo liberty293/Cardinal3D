@@ -347,6 +347,9 @@ public:
         Vec3 center() const;
         // Computes the centroid of the loop of the vertex
         Vec3 neighborhood_center() const;
+        // Returns the map from vertices adjacent to the vertex `v` to
+        // the halfedge that starts from `self` and points to `v`
+        std::unordered_map<VertexRef, HalfedgeRef> neighborhood_map() const;
         // Returns an id unique to this vertex
         unsigned int id() const {
             return _id;

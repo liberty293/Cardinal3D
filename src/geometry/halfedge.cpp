@@ -116,6 +116,16 @@ Vec3 Halfedge_Mesh::Vertex::neighborhood_center() const {
     return c;
 }
 
+std::unordered_map<Halfedge_Mesh::VertexRef, Halfedge_Mesh::HalfedgeRef> Halfedge_Mesh::Vertex::neighborhood_map() const {
+    std::unordered_map<VertexRef, HalfedgeRef> ret;
+    HalfedgeRef h = _halfedge;
+    do {
+        ret[h->twin()->vertex()] = h;
+        h = h->twin()->next();
+    } while (h != _halfedge);
+    return ret;
+}
+
 unsigned int Halfedge_Mesh::Vertex::degree() const {
     unsigned int d = 0;
     HalfedgeCRef h = _halfedge;

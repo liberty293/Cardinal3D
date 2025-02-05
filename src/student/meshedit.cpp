@@ -1160,6 +1160,49 @@ Mat4 vertex_quadric(Halfedge_Mesh::VertexRef v, std::unordered_map<Halfedge_Mesh
 const int simplification_factor = 4;
 
 /*
+    An edge `e` is collapsable iff collapsing it will result in a good mesh
+*/
+bool edge_collapsable(Halfedge_Mesh::EdgeRef e) {
+    // `he_1` and `he_2` are the two halfedges of `e`
+    // The vertex of `he_1` is `v_1` and the vertex of `he_2` is `v_2`
+    Halfedge_Mesh::HalfedgeRef he_1 = e->halfedge(), he_2 = he_1->twin();
+    Halfedge_Mesh::VertexRef v_1 = he_1->vertex(), v_2 = he_2->vertex();
+    // If the two vertices of `e` are identical
+    if (he_1->vertex() == he_1->next()->vertex())
+        return false;
+    // If `he_1` or `he_2` are within some `2-gon`
+    if (he_1->next()->next() == he_1 || he_2->next()->next() == he_2)
+        return false;
+    // If there are two faces sharing two edges, `he_1->edge()` and `he_1->next()->edge()`
+    if (he_1->next()->twin()->next() == he_1->twin())
+        return false;
+    // If there are two faces sharing two edges, `he_2->edge()` and `he_2->next()->edge()`
+    if (he_2->next()->twin()->next() == he_2->twin())
+        return false;
+    std::unordered_map<Halfedge_Mesh::VertexRef, Halfedge_Mesh::HalfedgeRef> m_1 = v_1->neighborhood_map(), m_2 = v_2->neighborhood_map();
+
+    for (auto vhe_3 : m_1) {
+        Halfedge_Mesh::VertexRef v_3 = vhe_3.first;
+        // If both `v_1` and `v_2` connect to the same vertex `v_3`
+        if (m_2.find(v_3) != m_2.end()) {
+            Halfedge_Mesh::HalfedgeRef he_13 = vhe_3.second, he_23 = m_2[v_3];
+            // If `v_1, v_2, v_3` does not form a triangle, then collapsing
+            // `e` will result in `v_1 v_3` and `v_2 v_3` to be incident to more than two faces
+            bool v_123 = (he_13->twin()->next() == he_1) && (he_1->next() == he_23);
+            bool v_321 = (he_23->twin()->next() == he_2) && (he_2->next() == he_13);
+            if (!v_123 && !v_321)
+                return false;
+            // If the next halfedge of `v_1 v_3` and `v_2 v_3` are on the same edge,
+            // then collapsing `e` will result in the edge `(v_1 v_2) v_3` to
+            // be on two faces that are the same around the vertex `v_3`
+            if (he_13->next()->twin()->next() == he_23->twin() || he_23->next()->twin()->next() == he_13->twin())
+                return false;
+        }
+    }
+    return true;
+}
+
+/*
     Mesh simplification. Note that this function returns success in a similar
     manner to the local operations, except with only a boolean value.
     (e.g. you may want to return false if you can't simplify the mesh any
@@ -1202,10 +1245,13 @@ bool Halfedge_Mesh::simplify() {
     //    a quadric to the collapsed vertex, and to pop the collapsed edge off the
     //    top of the queue.
 
-    size_t target = faces.size() - (face_quadrics.size() - face_quadrics.size() / simplification_factor); //TODO
+    size_t target = faces.size() - (face_quadrics.size() - face_quadrics.size() / simplification_factor);
+    bool collapsed = false;
     while (faces.size() > target && edge_queue.size()) {
         Edge_Record top = edge_queue.top();
         edge_queue.pop();
+        if (!edge_collapsable(top.edge))
+            continue;
         // Erase the two vertices of `top.edge` from `vertex_quadrics`
         VertexRef v1 = top.edge->halfedge()->vertex(), v2 = top.edge->halfedge()->twin()->vertex();
         Mat4 new_quardric = vertex_quadrics[v1] + vertex_quadrics[v2];
@@ -1222,6 +1268,7 @@ bool Halfedge_Mesh::simplify() {
             } while (he != hi);
         }
         auto v_collapse_option = collapse_edge_erase(top.edge);
+        collapsed = true;
         assert (v_collapse_option.has_value());
         VertexRef v_collapse = v_collapse_option.value();
         {
@@ -1246,5 +1293,5 @@ bool Halfedge_Mesh::simplify() {
     // but here simply calling collapse_edge() will not erase the elements.
     // You should use collapse_edge_erase() instead for the desired behavior.
     
-    return true;
+    return collapsed;
 }
