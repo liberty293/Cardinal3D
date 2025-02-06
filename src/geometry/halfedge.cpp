@@ -126,6 +126,16 @@ std::unordered_map<Halfedge_Mesh::VertexRef, Halfedge_Mesh::HalfedgeRef> Halfedg
     return ret;
 }
 
+std::vector<Halfedge_Mesh::HalfedgeRef> Halfedge_Mesh::Vertex::neighborhood_halfedges() const {
+    std::vector<HalfedgeRef> ret;
+    HalfedgeRef h = _halfedge;
+    do {
+        ret.push_back(h);
+        h = h->twin()->next();
+    } while (h != _halfedge);
+    return ret;
+}
+
 unsigned int Halfedge_Mesh::Vertex::degree() const {
     unsigned int d = 0;
     HalfedgeCRef h = _halfedge;

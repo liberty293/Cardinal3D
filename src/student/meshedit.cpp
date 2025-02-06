@@ -53,11 +53,35 @@ Vec3 barycenter_of_vecs(std::vector<Vec3> positions) {
 /*
     This method should replace the given vertex and all its neighboring
     edges and faces with a single face, returning the new face.
- */
+*/
 std::optional<Halfedge_Mesh::FaceRef> Halfedge_Mesh::erase_vertex(Halfedge_Mesh::VertexRef v) {
-    
-    (void)v;
-    return std::nullopt;
+    HalfedgeRef hi = v->halfedge();
+    // `f` will be the merged face 
+    FaceRef f = hi->face();
+    auto vhe = v->neighborhood_halfedges();
+    int n_hes = vhe.size();
+    for (int i = 0; i < n_hes; ++i) {
+        HalfedgeRef he_nxt = vhe[i], he_cur = vhe[(i + 1) % n_hes];
+        VertexRef v_cur = he_cur->twin()->vertex();
+        v_cur->_halfedge = he_cur->next();
+        
+        HalfedgeRef he = he_cur;
+        while (he->next() != he_nxt->twin()) {
+            he = he->next();
+            he->_face = f;
+        };
+        he->_next = he_nxt->next();
+    }
+    f->_halfedge = hi->next();
+
+    for (auto he : vhe) {
+        erase(he->edge()), erase(he), erase(he->twin());
+        if (he->face() != f)
+           erase(he->face());
+    }
+    erase(v);
+
+    return f;
 }
 
 /*
@@ -71,7 +95,7 @@ std::optional<Halfedge_Mesh::FaceRef> Halfedge_Mesh::erase_edge(Halfedge_Mesh::E
         return std::nullopt;
     HalfedgeRef he_1_nxt = he_1->next(), he_2_nxt = he_2->next();
     VertexRef v_1 = he_1->vertex(), v_2 = he_2->vertex();
-    // We will use `f_1` for the merged face
+    // `f_1` will be the merged face
     FaceRef f_1 = he_1->face(), f_2 = he_2->face();
     // Refuse to remove if the two sides of `e` connect to the same face
     if (f_1 == f_2)
