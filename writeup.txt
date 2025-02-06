@@ -1,0 +1,8 @@
+Team members: Elizabeth Childs (elchilds), Yicheng Quian (pratherc)
+
+We have implemented all the basic operations, and the following advanced operations:
+* Boundary edge collapse
+* Erase vertex
+* Erase edge
+
+We implemented a function `edge_collapsable` to check whether collapsing an edge will result in an unsatisfying mesh. This function is used by `simplify` to skip edges that should not be collapsed
