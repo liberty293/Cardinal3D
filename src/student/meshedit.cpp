@@ -188,7 +188,12 @@ std::optional<Halfedge_Mesh::VertexRef> Halfedge_Mesh::collapse_edge(Halfedge_Me
     v_1->pos = (v_1->pos + v_2->pos) * 0.5;
 
     erase(he_1), erase(he_2), erase(v_2), erase(he_1->_edge);
-    
+
+    // If both sides of `he_1n_twin->_edge` (`he_2n_twin->_edge`) are boundary faces, the edges can be removed
+    if (he_1n_twin->_face->boundary && he_1n_twin->_twin->_face->boundary)
+        erase_edge(he_1n_twin->_edge);
+    if (he_2n_twin->_face->boundary && he_2n_twin->_twin->_face->boundary)
+        erase_edge(he_2n_twin->_edge);
     return v_1;
 }
 
@@ -1339,6 +1344,11 @@ bool edge_collapsable(Halfedge_Mesh::EdgeRef e) {
             // then collapsing `e` will result in the edge `(v_1 v_2) v_3` to
             // be on two faces that are the same around the vertex `v_3`
             if (he_13->next()->twin()->next() == he_23->twin() || he_23->next()->twin()->next() == he_13->twin())
+                return false;
+            // If edge `v_1 v_3` and `v_2 v_3` are simultaneously on two identical faces,
+            // then collapsing `e` will result in the two sides of the edge `(v_1 v_2) v_3` to
+            // be on the same face
+            if (he_13->twin()->face() == he_23->face() && he_23->twin()->face() == he_13->face())
                 return false;
         }
     }
