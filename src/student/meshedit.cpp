@@ -155,13 +155,13 @@ std::optional<Halfedge_Mesh::VertexRef> Halfedge_Mesh::collapse_edge(Halfedge_Me
         he_2p = he;
     }
 
-    // Reassign the `vertex` field of halfedges connected to `v_2`
+    // Reassign the `vertex` field of halfedges starting from `v_2`
     std::vector v_2_nhe = v_2->neighborhood_halfedges();
     for (auto he : v_2_nhe)
         he->_vertex = v_1;
 
     HalfedgeRef he_1n_twin = he_1n->_twin, he_1p_twin = he_1p->_twin;
-    he_1n->_edge->_halfedge = he_1n_twin, he_1p->_edge->_halfedge = he_1p_twin; // In case `he_1n` is removed
+    he_1n->_edge->_halfedge = he_1n_twin, he_1p->_edge->_halfedge = he_1p_twin; // In case `he_1n, he_1p` are is removed
     if (he_1n->next() == he_1p) {
         he_1n_twin->_twin = he_1p_twin, he_1p_twin->_twin = he_1n_twin;
         erase(he_1n), erase(he_1p), erase(he_1n->_edge);
@@ -173,7 +173,7 @@ std::optional<Halfedge_Mesh::VertexRef> Halfedge_Mesh::collapse_edge(Halfedge_Me
     }
 
     HalfedgeRef he_2n_twin = he_2n->_twin, he_2p_twin = he_2p->_twin;
-    he_2n->_edge->_halfedge = he_2n_twin, he_2p->_edge->_halfedge = he_2p_twin; // In case `he_2n` is removed
+    he_2n->_edge->_halfedge = he_2n_twin, he_2p->_edge->_halfedge = he_2p_twin; // In case `he_2n, he_2p` are is removed
     if (he_2n->next() == he_2p) {
         he_2n_twin->_twin = he_2p_twin, he_2p_twin->_twin = he_2n_twin;
         erase(he_2n), erase(he_2p), erase(he_2n->_edge);
