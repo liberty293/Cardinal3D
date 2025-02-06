@@ -125,6 +125,75 @@ std::optional<Halfedge_Mesh::FaceRef> Halfedge_Mesh::erase_edge(Halfedge_Mesh::E
     the new vertex created by the collapse.
 */
 std::optional<Halfedge_Mesh::VertexRef> Halfedge_Mesh::collapse_edge(Halfedge_Mesh::EdgeRef e) {
+
+    /*
+       | he_1p   he_1n |
+       |               |
+       |      he_1     |     he_1 : v_1 -> v_2
+      v_1 ----------- v_2
+       |      he_2     |     he_2 : v_2 -> v_1
+       |               |
+       | he_2n   he_2p |
+
+       v_2 will be erased
+       if `he_1` is in a triangle, `he_1n, he_1p, he_1n->_edge` will be erased
+       if `he_2` is in a triangle, `he_2n, he_2p, he_2n->_edge` will be erased
+    */
+    HalfedgeRef he_1 = e->halfedge(), he_2 = he_1->twin(), he_1n = he_1->next(), he_2n = he_2->next();
+    VertexRef v_1 = he_1->vertex(), v_2 = he_2->vertex();
+    HalfedgeRef he_1p, he_2p;
+    {
+        HalfedgeRef he = he_1;
+        while (he->next() != he_1)
+            he = he->next();
+        he_1p = he;
+    }
+    {
+        HalfedgeRef he = he_2;
+        while (he->next() != he_2)
+            he = he->next();
+        he_2p = he;
+    }
+
+    // Reassign the `vertex` field of halfedges connected to `v_2`
+    std::vector v_2_nhe = v_2->neighborhood_halfedges();
+    for (auto he : v_2_nhe)
+        he->_vertex = v_1;
+
+    HalfedgeRef he_1n_twin = he_1n->_twin, he_1p_twin = he_1p->_twin;
+    he_1n->_edge->_halfedge = he_1n_twin, he_1p->_edge->_halfedge = he_1p_twin; // In case `he_1n` is removed
+    if (he_1n->next() == he_1p) {
+        he_1n_twin->_twin = he_1p_twin, he_1p_twin->_twin = he_1n_twin;
+        erase(he_1n), erase(he_1p), erase(he_1n->_edge);
+        erase(he_1n->_face);
+        he_1n_twin->_edge = he_1p->_edge;
+        he_1p->_vertex->_halfedge = he_1n_twin;
+    } else {
+        he_1p->_next = he_1n, he_1p->_face->_halfedge = he_1p;
+    }
+
+    HalfedgeRef he_2n_twin = he_2n->_twin, he_2p_twin = he_2p->_twin;
+    he_2n->_edge->_halfedge = he_2n_twin, he_2p->_edge->_halfedge = he_2p_twin; // In case `he_2n` is removed
+    if (he_2n->next() == he_2p) {
+        he_2n_twin->_twin = he_2p_twin, he_2p_twin->_twin = he_2n_twin;
+        erase(he_2n), erase(he_2p), erase(he_2n->_edge);
+        erase(he_2n->_face);
+        he_2n_twin->_edge = he_2p->_edge;
+        he_2p->_vertex->_halfedge = he_2n_twin;
+    } else {
+        he_2p->_next = he_2n, he_2p->_face->_halfedge = he_2p;
+    }
+
+    v_1->_halfedge = he_2p_twin;
+    v_1->pos = (v_1->pos + v_2->pos) * 0.5;
+
+    erase(he_1), erase(he_2), erase(v_2), erase(he_1->_edge);
+    
+    return v_1;
+}
+
+/*
+std::optional<Halfedge_Mesh::VertexRef> Halfedge_Mesh::collapse_edge(Halfedge_Mesh::EdgeRef e) {
     //return std::nullopt;
     //collect edges and halfedges
     std::vector<HalfedgeRef> h;
@@ -244,6 +313,7 @@ std::optional<Halfedge_Mesh::VertexRef> Halfedge_Mesh::collapse_edge(Halfedge_Me
 
     return v0;
 }
+*/
 
 /*
     This method should collapse the given face and return an iterator to
