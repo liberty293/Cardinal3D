@@ -162,16 +162,17 @@ std::optional<Halfedge_Mesh::VertexRef> Halfedge_Mesh::collapse_edge(Halfedge_Me
 
     HalfedgeRef he_1n_twin = he_1n->_twin, he_1p_twin = he_1p->_twin;
     he_1n->_edge->_halfedge = he_1n_twin, he_1p->_edge->_halfedge = he_1p_twin; // In case `he_1n, he_1p` are is removed
-    if (he_1n->next() == he_1p) {
-        he_1n_twin->_twin = he_1p_twin, he_1p_twin->_twin = he_1n_twin;
-        erase(he_1n), erase(he_1p), erase(he_1n->_edge);
+    if (he_1n->next() == he_1p) { //if triangle
+        he_1n_twin->_twin = he_1p_twin, he_1p_twin->_twin = he_1n_twin; //set twins
+        erase(he_1n), erase(he_1p), erase(he_1n->_edge); //erase inner halfedges
         erase(he_1n->_face);
-        he_1n_twin->_edge = he_1p->_edge;
-        he_1p->_vertex->_halfedge = he_1n_twin;
+        he_1n_twin->_edge = he_1p->_edge; //reassign edge
+        he_1p->_vertex->_halfedge = he_1n_twin; //reassign halfedge
     } else {
         he_1p->_next = he_1n, he_1p->_face->_halfedge = he_1p;
     }
 
+    //repeat for other side
     HalfedgeRef he_2n_twin = he_2n->_twin, he_2p_twin = he_2p->_twin;
     he_2n->_edge->_halfedge = he_2n_twin, he_2p->_edge->_halfedge = he_2p_twin; // In case `he_2n, he_2p` are is removed
     if (he_2n->next() == he_2p) {
@@ -435,6 +436,29 @@ std::optional<Halfedge_Mesh::EdgeRef> Halfedge_Mesh::flip_edge(Halfedge_Mesh::Ed
 */
 std::optional<Halfedge_Mesh::VertexRef> Halfedge_Mesh::split_edge(Halfedge_Mesh::EdgeRef e) {
 
+    if (e->on_boundary())
+    {
+        HalfedgeRef hcurrent = e->halfedge();
+            //collect
+        std::vector<HalfedgeRef> h;
+        std::vector<VertexRef> v;
+        std::vector<EdgeRef> eR;
+
+            //collect all of the half edges, vertices, edges on one face
+        h.push_back(hcurrent);
+        v.push_back(hcurrent->vertex());
+        eR.push_back(e);
+        hcurrent = hcurrent->next();
+
+        while (h.front() != hcurrent)
+        {
+            h.push_back(hcurrent);
+            v.push_back(hcurrent->vertex());
+            hcurrent = hcurrent->next();
+
+        }
+    }
+
     HalfedgeRef hcurrent = e->halfedge();
     // Check both sides are on triangles
     if (hcurrent->next()->next()->next() != hcurrent)
@@ -442,7 +466,7 @@ std::optional<Halfedge_Mesh::VertexRef> Halfedge_Mesh::split_edge(Halfedge_Mesh:
     if (hcurrent->twin()->next()->next()->next() != hcurrent->twin())
         return std::nullopt;
 
-    //TODO: does not handle boundaries
+    
     //collect
     std::vector<HalfedgeRef> h;
     std::vector<VertexRef> v;
