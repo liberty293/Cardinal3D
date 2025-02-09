@@ -436,28 +436,8 @@ std::optional<Halfedge_Mesh::EdgeRef> Halfedge_Mesh::flip_edge(Halfedge_Mesh::Ed
 */
 std::optional<Halfedge_Mesh::VertexRef> Halfedge_Mesh::split_edge(Halfedge_Mesh::EdgeRef e) {
 
-    if (e->on_boundary())
-    {
-        HalfedgeRef hcurrent = e->halfedge();
-            //collect
-        std::vector<HalfedgeRef> h;
-        std::vector<VertexRef> v;
-        std::vector<EdgeRef> eR;
 
-            //collect all of the half edges, vertices, edges on one face
-        h.push_back(hcurrent);
-        v.push_back(hcurrent->vertex());
-        eR.push_back(e);
-        hcurrent = hcurrent->next();
 
-        while (h.front() != hcurrent)
-        {
-            h.push_back(hcurrent);
-            v.push_back(hcurrent->vertex());
-            hcurrent = hcurrent->next();
-
-        }
-    }
 
     HalfedgeRef hcurrent = e->halfedge();
     // Check both sides are on triangles
