@@ -9,6 +9,7 @@ namespace PT {
 // Return the radiance along a ray entering the camera and landing on a
 // point within pixel (x,y) of the output image.
 //
+
 Spectrum Pathtracer::trace_pixel(size_t x, size_t y) {
 
     Vec2 xy((float)x, (float)y);
@@ -19,9 +20,19 @@ Spectrum Pathtracer::trace_pixel(size_t x, size_t y) {
     // Generate a sample within the pixel with coordinates xy and return the
     // incoming light using trace_ray.
 
-    // If n_samples is 1, please send the ray through the center of the pixel.
-    // If n_samples > 1, please send the ray through any random point within the pixel
 
+    // If n_samples is 1, please send the ray through the center of the pixel.
+    if(n_samples==1)
+       xy += .5;
+
+    // If n_samples > 1, please send the ray through any random point within the pixel
+    else
+    {
+        Samplers::Rect::Uniform Sampler(Vec2(1));
+        float pdf;
+        Vec2 pt(Sampler.sample(pdf));
+        xy += pt;
+    }
     // Tip: consider making a call to Samplers::Rect::Uniform
 
     // Tip: you may want to use log_ray for debugging. Given ray t, the following lines
@@ -33,6 +44,8 @@ Spectrum Pathtracer::trace_pixel(size_t x, size_t y) {
     // As an example, the code below generates a ray through the bottom left of the
     // specified pixel
     Ray out = camera.generate_ray(xy / wh);
+    if (RNG::coin_flip(0.0003f))
+        log_ray(out, 10.0f);
     return trace_ray(out);
 }
 
