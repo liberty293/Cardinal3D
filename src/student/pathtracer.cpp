@@ -45,7 +45,7 @@ Spectrum Pathtracer::trace_pixel(size_t x, size_t y) {
     // specified pixel
     Ray out = camera.generate_ray(xy / wh);
     if (RNG::coin_flip(0.0003f))
-        log_ray(out, 10.0f);
+        log_ray(out, 5.0f);
     return trace_ray(out);
 }
 

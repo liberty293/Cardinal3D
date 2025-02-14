@@ -26,5 +26,5 @@ Ray Camera::generate_ray(Vec2 screen_coord) const {
     // the camera space to world space transform (iview) to transform the ray back into world space.
     Vec3 o(iview*Vec3(0));
 
-    return Ray(o, iview*pos-o);
+    return Ray(o, (iview*pos-o).unit());
 }
