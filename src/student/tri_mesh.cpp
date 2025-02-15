@@ -13,8 +13,13 @@ BBox Triangle::bbox() const {
     // account for that here, or later on in BBox::intersect
 
     BBox box;
-    box.min = hmin(hmin(vertex_list[v0].position,vertex_list[v1].position),vertex_list[v2].position);
-    box.max = hmax(hmax(vertex_list[v0].position,vertex_list[v1].position),vertex_list[v2].position);
+
+    
+    box.enclose(vertex_list[v0].position);
+    box.enclose(vertex_list[v1].position);
+    box.enclose(vertex_list[v2].position);
+    //box.min = hmin(hmin(vertex_list[v0].position,vertex_list[v1].position),vertex_list[v2].position);
+    //box.max = hmax(hmax(vertex_list[v0].position,vertex_list[v1].position),vertex_list[v2].position);
     return box;
 }
 
