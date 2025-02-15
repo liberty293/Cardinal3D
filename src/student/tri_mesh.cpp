@@ -60,8 +60,8 @@ Trace Triangle::hit(const Ray& ray) const {
         {
             ret.hit = true;
             ret.origin = ray.point;
-            ret.position = ray.point - ray.dir*uvt.z;
-            ret.distance = 2;
+            ret.position = ray.point + ray.dir*uvt.z;
+            ret.distance = uvt.z;
             ret.normal = uvt.x*v_1.normal + uvt.y*v_2.normal + (1-uvt.x-uvt.y)*v_0.normal;
             ret.normal = ret.normal.unit();
 
