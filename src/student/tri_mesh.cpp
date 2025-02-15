@@ -14,6 +14,7 @@ BBox Triangle::bbox() const {
 
     BBox box;
     box.min = hmin(hmin(vertex_list[v0].position,vertex_list[v1].position),vertex_list[v2].position);
+    box.max = hmax(hmax(vertex_list[v0].position,vertex_list[v1].position),vertex_list[v2].position);
     return box;
 }
 
