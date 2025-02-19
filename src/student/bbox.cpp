@@ -9,6 +9,7 @@ bool BBox::hit(const Ray& ray, Vec2& times) const {
     // If the ray intersected the bounding box within the range given by
     // [times.x,times.y], update times with the new intersection times.
     //check the x coordinate
+
     if(ray.dir.x != 0) //parallel with x axis; will never hit
     {
         float ax = 1/ray.dir.x;

@@ -25,6 +25,16 @@ void BVH<Primitive>::build(std::vector<Primitive>&& prims, size_t max_leaf_size)
     nodes.clear();
     primitives = std::move(prims);
 
+    // edge case
+    if(primitives.empty()) {
+        return;
+    }
+
+    // compute bounding box for all primitives
+    BBox bb;
+    for(size_t i = 0; i < primitives.size(); ++i) {
+        bb.enclose(primitives[i].bbox());
+    }
     // TODO (PathTracer): Task 3
     // Modify the code ahead to construct a BVH from the given vector of primitives and maximum leaf
     // size configuration.
@@ -33,6 +43,32 @@ void BVH<Primitive>::build(std::vector<Primitive>&& prims, size_t max_leaf_size)
     // In general, here is a rough sketch:
     //
     //  For each axis X,Y,Z:
+    //x axis first
+    // for (int axis = 0; axis < 3; axis++)
+    // {
+
+    // void build(int x, int y) {
+    //     int a = x + y;
+    //     return;
+    // }
+    
+    // //     Try possible splits along axis, evaluate SAH for each     
+    //     for(size_t i = 0; i < primitives.size(); ++i)  //sorting all the primitives along this axis
+    //     {
+    //         primitives[i].bbox().center();
+    //         std::sort(primitives.begin(), primitives.end(), 
+    //             [axis](const Primitive& a, const Primitive& b) {
+    //                 return a.bbox().center()[axis] < b.bbox().center()[axis];
+    //             });
+    //     }
+
+        // //now adding them to the a bounding box option
+        // for (int i = 0 + 1; i < primitives.size(); ++i) {
+        //     BBox left, right;
+        //     for (int j = 0; j < i; ++j) left.expand(primitives[j].bounds);
+        //     for (int j = i; j < end; ++j) right.expand(primitives[j].bounds);
+            
+    
     //     Try possible splits along axis, evaluate SAH for each
     //  Take minimum cost across all axes.
     //  Partition primitives into a left and right child group
@@ -59,11 +95,7 @@ void BVH<Primitive>::build(std::vector<Primitive>&& prims, size_t max_leaf_size)
         return;
     }
 
-    // compute bounding box for all primitives
-    BBox bb;
-    for(size_t i = 0; i < primitives.size(); ++i) {
-        bb.enclose(primitives[i].bbox());
-    }
+
 
     // set up root node (root BVH). Notice that it contains all primitives.
     size_t root_node_addr = new_node();
