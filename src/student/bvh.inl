@@ -182,11 +182,11 @@ void BVH<Primitive>::hit_subtree(const Ray& ray, size_t node_addr, Trace& closes
         r_intersect = r_intersect && (!closest.hit || (times_r.x < closest.distance));
         if (!l_intersect && !r_intersect)
             return;
-        if (!l_intersect)
+        else if (!l_intersect)
             hit_subtree(ray, n.r, closest);
-        if (!r_intersect)
+        else if (!r_intersect)
             hit_subtree(ray, n.l, closest);
-        if (times_l.x < times_r.x) {
+        else if (times_l.x < times_r.x) {
             hit_subtree(ray, n.l, closest);
             r_intersect = r_intersect && (!closest.hit || (times_r.x < closest.distance));
             if (r_intersect)
