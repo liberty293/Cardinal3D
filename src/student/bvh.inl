@@ -69,6 +69,7 @@ void BVH<Primitive>::build(std::vector<Primitive>&& prims, size_t max_leaf_size)
 
     // set up root node (root BVH). Notice that it contains all primitives.
     size_t root_node_addr = new_node();
+    root_idx = root_node_addr;
     Node& node = nodes[root_node_addr];
     node.bbox = bb;
     node.start = 0;
@@ -165,6 +166,42 @@ void BVH<Primitive>::build_subtree(size_t node_addr, size_t max_leaf_size) {
 }
 
 template<typename Primitive>
+void BVH<Primitive>::hit_subtree(const Ray& ray, size_t node_addr, Trace& closest) const {
+    Node n = nodes[node_addr];
+    if (!(n.l && n.r)) {
+        for (size_t idx = n.start; idx < n.start + n.size; ++idx) {
+            const Primitive& prim = primitives[idx];
+            Trace hit = prim.hit(ray);
+            closest = Trace::min(closest, hit);
+        }
+    } else {
+        Vec2 times_l = ray.dist_bounds, times_r = ray.dist_bounds;
+        bool l_intersect = nodes[n.l].bbox.hit(ray, times_l);
+        l_intersect = l_intersect && (!closest.hit || (times_l.x < closest.distance));
+        bool r_intersect = nodes[n.r].bbox.hit(ray, times_r);
+        r_intersect = r_intersect && (!closest.hit || (times_r.x < closest.distance));
+        if (!l_intersect && !r_intersect)
+            return;
+        if (!l_intersect)
+            hit_subtree(ray, n.r, closest);
+        if (!r_intersect)
+            hit_subtree(ray, n.l, closest);
+        if (times_l.x < times_r.x) {
+            hit_subtree(ray, n.l, closest);
+            r_intersect = r_intersect && (!closest.hit || (times_r.x < closest.distance));
+            if (r_intersect)
+                hit_subtree(ray, n.r, closest);
+        }
+        else {
+            hit_subtree(ray, n.r, closest);
+            l_intersect = l_intersect && (!closest.hit || (times_l.x < closest.distance));
+            if (l_intersect)
+                hit_subtree(ray, n.l, closest);
+        }
+    }
+}
+
+template<typename Primitive>
 Trace BVH<Primitive>::hit(const Ray& ray) const {
 
     // TODO (PathTracer): Task 3
@@ -175,12 +212,13 @@ Trace BVH<Primitive>::hit(const Ray& ray) const {
     // The starter code simply iterates through all the primitives.
     // Again, remember you can use hit() on any Primitive value.
 
-    Trace ret;
-    for(const Primitive& prim : primitives) {
-        Trace hit = prim.hit(ray);
-        ret = Trace::min(ret, hit);
-    }
-    return ret;
+    Trace closest;
+    if (nodes.empty())
+        return closest;
+    Vec2 times = ray.dist_bounds;
+    if (nodes[root_idx].bbox.hit(ray, times))
+        hit_subtree(ray, root_idx, closest);
+    return closest;
 }
 
 template<typename Primitive>

@@ -22,6 +22,7 @@ public:
     BVH& operator=(const BVH& src) = delete;
 
     BBox bbox() const;
+    void hit_subtree(const Ray& ray, size_t node_addr, Trace& closest) const;
     Trace hit(const Ray& ray) const;
 
     BVH copy() const;
