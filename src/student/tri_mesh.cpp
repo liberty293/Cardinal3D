@@ -13,13 +13,8 @@ BBox Triangle::bbox() const {
     // account for that here, or later on in BBox::intersect
 
     BBox box;
-
-    
-    box.enclose(vertex_list[v0].position);
-    box.enclose(vertex_list[v1].position);
-    box.enclose(vertex_list[v2].position);
-    //box.min = hmin(hmin(vertex_list[v0].position,vertex_list[v1].position),vertex_list[v2].position);
-    //box.max = hmax(hmax(vertex_list[v0].position,vertex_list[v1].position),vertex_list[v2].position);
+    box.min = hmin(hmin(vertex_list[v0].position,vertex_list[v1].position),vertex_list[v2].position);
+    box.max = hmax(hmax(vertex_list[v0].position,vertex_list[v1].position),vertex_list[v2].position);
     return box;
 }
 
@@ -65,7 +60,7 @@ Trace Triangle::hit(const Ray& ray) const {
         {
             ret.hit = true;
             ret.origin = ray.point;
-            ret.position = ray.at(uvt.z);
+            ret.position = ray.point + ray.dir*uvt.z;
             ret.distance = uvt.z;
             ret.normal = uvt.x*v_1.normal + uvt.y*v_2.normal + (1-uvt.x-uvt.y)*v_0.normal;
             ret.normal = ret.normal.unit();

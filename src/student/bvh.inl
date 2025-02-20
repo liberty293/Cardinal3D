@@ -3,6 +3,8 @@
 #include "debug.h"
 #include <stack>
 
+#define N_BINS (16)
+
 namespace PT {
 
 // construct BVH hierarchy given a vector of prims
@@ -25,16 +27,6 @@ void BVH<Primitive>::build(std::vector<Primitive>&& prims, size_t max_leaf_size)
     nodes.clear();
     primitives = std::move(prims);
 
-    // edge case
-    if(primitives.empty()) {
-        return;
-    }
-
-    // compute bounding box for all primitives
-    BBox bb;
-    for(size_t i = 0; i < primitives.size(); ++i) {
-        bb.enclose(primitives[i].bbox());
-    }
     // TODO (PathTracer): Task 3
     // Modify the code ahead to construct a BVH from the given vector of primitives and maximum leaf
     // size configuration.
@@ -43,32 +35,6 @@ void BVH<Primitive>::build(std::vector<Primitive>&& prims, size_t max_leaf_size)
     // In general, here is a rough sketch:
     //
     //  For each axis X,Y,Z:
-    //x axis first
-    // for (int axis = 0; axis < 3; axis++)
-    // {
-
-    // void build(int x, int y) {
-    //     int a = x + y;
-    //     return;
-    // }
-    
-    // //     Try possible splits along axis, evaluate SAH for each     
-    //     for(size_t i = 0; i < primitives.size(); ++i)  //sorting all the primitives along this axis
-    //     {
-    //         primitives[i].bbox().center();
-    //         std::sort(primitives.begin(), primitives.end(), 
-    //             [axis](const Primitive& a, const Primitive& b) {
-    //                 return a.bbox().center()[axis] < b.bbox().center()[axis];
-    //             });
-    //     }
-
-        // //now adding them to the a bounding box option
-        // for (int i = 0 + 1; i < primitives.size(); ++i) {
-        //     BBox left, right;
-        //     for (int j = 0; j < i; ++j) left.expand(primitives[j].bounds);
-        //     for (int j = i; j < end; ++j) right.expand(primitives[j].bounds);
-            
-    
     //     Try possible splits along axis, evaluate SAH for each
     //  Take minimum cost across all axes.
     //  Partition primitives into a left and right child group
@@ -95,7 +61,11 @@ void BVH<Primitive>::build(std::vector<Primitive>&& prims, size_t max_leaf_size)
         return;
     }
 
-
+    // compute bounding box for all primitives
+    BBox bb;
+    for(size_t i = 0; i < primitives.size(); ++i) {
+        bb.enclose(primitives[i].bbox());
+    }
 
     // set up root node (root BVH). Notice that it contains all primitives.
     size_t root_node_addr = new_node();
@@ -104,45 +74,94 @@ void BVH<Primitive>::build(std::vector<Primitive>&& prims, size_t max_leaf_size)
     node.start = 0;
     node.size = primitives.size();
 
-    // Create bounding boxes for children
-    BBox split_leftBox;
-    BBox split_rightBox;
+    build_subtree(root_node_addr, max_leaf_size);
+}
 
-    // compute bbox for left child
-    Primitive& p = primitives[0];
-    BBox pbb = p.bbox();
-    split_leftBox.enclose(pbb);
-
-    // compute bbox for right child
-    for(size_t i = 1; i < primitives.size(); ++i) {
-        Primitive& p = primitives[i];
-        BBox pbb = p.bbox();
-        split_rightBox.enclose(pbb);
+/*
+    We expect that both `n.l` and `n.r` are initialized to `0` by `new_node()`
+*/
+template<typename Primitive>
+void BVH<Primitive>::build_subtree(size_t node_addr, size_t max_leaf_size) {
+    Node n = nodes[node_addr];
+    if (n.size <= max_leaf_size) {
+        n.l = n.r = 0;
+        return;
     }
+    int best_axis = -1, best_split = -1; float min_cost = FLT_MAX; // [0, best_split] + [best_split + 1, N_BINS - 1]
+    std::vector<int> best_bin_cnt; // bin `id` of `i`-the primitive
+    BBox best_left, best_right;
+    for (int axis = 0; axis < 3; ++axis) {
+        float min = n.bbox.min[axis], max = n.bbox.max[axis];
+        std::vector<int> cnt_bin; // number of elements in `i`-th bin
+        std::vector<int> bin_cnt; // bin `id` of `i`-the primitive
+        std::vector<BBox> bbox_bin;
+        for (size_t i = 0; i < n.size; ++i)
+            bin_cnt.push_back(0);
+        for (size_t i = 0; i < N_BINS; ++i)
+            cnt_bin.push_back(0), bbox_bin.push_back(BBox());
+        for (size_t addr = n.start; addr < n.start + n.size; ++addr) {
+            BBox b = primitives[addr].bbox();
+            // Use center of bbox as centroid
+            int bin = ((b.max[axis] + b.min[axis]) / 2 - min) * N_BINS / (max - min);
+            bin = bin < 0 ? 0 : (bin >= N_BINS ? N_BINS - 1 : bin);
+            bin_cnt[addr - n.start] = bin;
+            cnt_bin[bin] += 1;
+            bbox_bin[bin].enclose(b);
+        }
+        std::vector<BBox> left_bbox; // bbox of the first `i` bboxes
+        std::vector<BBox> right_bbox; // bbox of the last `i` bboxes
+        std::vector<int> left_sum; // total number of elements in the first `i` bboxes
+        std::vector<int> right_sum; // total number of elements in the last `i` bboxes
+        left_bbox.push_back(BBox()), right_bbox.push_back(BBox());
+        left_sum.push_back(0), right_sum.push_back(0);
+        for (size_t i = 0; i < N_BINS; ++i) {
+            left_bbox.push_back(left_bbox[i]); left_bbox[i + 1].enclose(bbox_bin[i]);
+            right_bbox.push_back(right_bbox[i]); right_bbox[i + 1].enclose(bbox_bin[N_BINS - i - 1]);
+            left_sum.push_back(left_sum[i] + cnt_bin[i]);
+            right_sum.push_back(right_sum[i] + cnt_bin[N_BINS - i - 1]);
+        }
+        for (size_t i = 1; i < N_BINS; ++i) {
+            float cost = left_bbox[i].surface_area() * left_sum[i] + right_bbox[N_BINS - i].surface_area() * right_sum[N_BINS - i];
+            if (cost < min_cost) {
+                min_cost = cost;
+                if (best_axis != axis)
+                    best_bin_cnt = bin_cnt;
+                best_axis = axis, best_split = i;
+                best_left = left_bbox[i], best_right = right_bbox[N_BINS - i];
+            }
+        }
+    }
+    std::vector<Primitive> left, right;
+    for (size_t i = 0; i < n.size; ++i) {
+        if (best_bin_cnt[i] <= best_split)
+            left.push_back(std::move(primitives[n.start + i]));
+        else
+            right.push_back(std::move(primitives[n.start + i]));
+    }
+    for (size_t i = 0; i < left.size(); ++i)
+        primitives[n.start + i] = std::move(left[i]);
+    for (size_t i = 0; i < right.size(); ++i)
+        primitives[n.start + left.size() + i] = std::move(right[i]);
 
-    // Note that by construction in this simple example, the primitives are
-    // contiguous as required. But in the students real code, students are
-    // responsible for reorganizing the primitives in the primitives array so that
-    // after a SAH split is computed, the chidren refer to contiguous ranges of primitives.
-
-    size_t startl = 0;  // starting prim index of left child
-    size_t rangel = 1;  // number of prims in left child
-    size_t startr = startl + rangel;  // starting prim index of right child
-    size_t ranger = primitives.size() - rangel; // number of prims in right child
+    if (left.size() == 0 || right.size() == 0) {
+        n.l = n.r = 0;
+        return;
+    }
 
     // create child nodes
     size_t node_addr_l = new_node();
     size_t node_addr_r = new_node();
-    nodes[root_node_addr].l = node_addr_l;
-    nodes[root_node_addr].r = node_addr_r;
+    nodes[node_addr].l = node_addr_l, nodes[node_addr].r = node_addr_r;
 
-    nodes[node_addr_l].bbox = split_leftBox;
-    nodes[node_addr_l].start = startl;
-    nodes[node_addr_l].size = rangel;
+    nodes[node_addr_l].bbox = best_left;
+    nodes[node_addr_l].start = n.start;
+    nodes[node_addr_l].size = left.size();
+    build_subtree(node_addr_l, max_leaf_size);
 
-    nodes[node_addr_r].bbox = split_rightBox;
-    nodes[node_addr_r].start = startr;
-    nodes[node_addr_r].size = ranger;
+    nodes[node_addr_r].bbox = best_right;
+    nodes[node_addr_r].start = n.start + left.size();
+    nodes[node_addr_r].size = right.size();
+    build_subtree(node_addr_r, max_leaf_size);
 }
 
 template<typename Primitive>

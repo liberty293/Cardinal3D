@@ -12,6 +12,7 @@ template<typename Primitive> class BVH {
 public:
     BVH() = default;
     BVH(std::vector<Primitive>&& primitives, size_t max_leaf_size = 1);
+    void build_subtree(size_t node_addr, size_t max_leaf_size);
     void build(std::vector<Primitive>&& primitives, size_t max_leaf_size = 1);
 
     BVH(BVH&& src) = default;
@@ -41,6 +42,7 @@ private:
 
     std::vector<Node> nodes;
     std::vector<Primitive> primitives;
+    std::vector<BBox> bboxes; // **TODO: Use this!**
     size_t root_idx = 0;
 };
 

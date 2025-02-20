@@ -8,56 +8,42 @@ bool BBox::hit(const Ray& ray, Vec2& times) const {
     // Implement ray - bounding box intersection test
     // If the ray intersected the bounding box within the range given by
     // [times.x,times.y], update times with the new intersection times.
-    //check the x coordinate
-
-    if(ray.dir.x != 0) //parallel with x axis; will never hit
-    {
-        float ax = 1/ray.dir.x;
-        float bx = -ray.point.x/ray.dir.x;
-        Vec2 tx(ax*min.x +bx, ax*max.x + bx);
-        if(times.x > tx.y || times.y  < tx.x) //outside of the times
-            return false;
-        times.x = times.x > tx.x ? times.x : tx.x; //take the greatest of the small range
-        times.y = times.y < tx.y ? times.y : tx.y; //and the least of the big range
-    }
-    else
-    {
-        if(ray.point.x > max.x || ray.point.x < min.x) //not in between the planes
-            return false;
+    float xmin, xmax, ymin, ymax, zmin, zmax;
+    if (ray.dir.x == 0) {
+        if (min.x <= ray.point.x && ray.point.x <= max.x)
+            xmin = times.x, xmax = times.y;
+        return false;
+    } else {
+        xmin = (min.x - ray.point.x) / ray.dir.x;
+        xmax = (max.x - ray.point.x) / ray.dir.x;
+        if (xmin > xmax)
+          std::swap(xmin, xmax);
     }
 
-    //check y coordinate
-    if(ray.dir.y != 0) //parallel with y axis; will never hit
-    {
-        float a = 1/ray.dir.y;
-        float b = -ray.point.y/ray.dir.y;
-        Vec2 t(a*min.y +b, a*max.y + b);
-        if(times.x > t.y || times.y  < t.x) //outside of the times
-            return false;
-        times.x = times.x > t.x ? times.x : t.x; //take the greatest of the small range
-        times.y = times.y < t.y ? times.y : t.y; //and the least of the big range
-    }
-    else
-    {
-        if(ray.point.y > max.y || ray.point.y < min.y) //not in between the planes
-            return false;
-    }
-    //check z coordinate
-    if(ray.dir.z != 0) //parallel with y axis; will never hit
-    {
-        float a = 1/ray.dir.z;
-        float b = -ray.point.z/ray.dir.z;
-        Vec2 t(a*min.z +b, a*max.z + b);
-        if(times.x > t.y || times.y  < t.x) //outside of the times
-            return false;
-        times.x = times.x > t.x ? times.x : t.x; //take the greatest of the small range
-        times.y = times.y < t.y ? times.y : t.y; //and the least of the big range
-    }
-    else
-    {
-        if(ray.point.z > max.z || ray.point.z < min.z) //not in between the planes
-            return false;
+    if (ray.dir.y == 0) {
+        if (min.y <= ray.point.y && ray.point.y <= max.y)
+            ymin = times.x, ymax = times.y;
+        return false;
+    } else {
+        ymin = (min.y - ray.point.y) / ray.dir.y;
+        ymax = (max.y - ray.point.y) / ray.dir.y;
+        if (ymin > ymax)
+          std::swap(ymin, ymax);
     }
 
-    return true;
+    if (ray.dir.z == 0) {
+        if (min.z <= ray.point.z && ray.point.z <= max.z)
+            zmin = times.x, zmax = times.y;
+        return false;
+    } else {
+        zmin = (min.z - ray.point.z) / ray.dir.z;
+        zmax = (max.z - ray.point.z) / ray.dir.z;
+        if (zmin > zmax)
+          std::swap(zmin, zmax);
+    }
+
+    float amin = std::max(std::max(std::max(ray.dist_bounds.x, times.x), xmin), std::max(ymin, zmin));
+    float amax = std::min(std::min(std::min(ray.dist_bounds.y, times.y), xmax), std::min(ymax, zmax));
+
+    return amin <= amax;
 }
