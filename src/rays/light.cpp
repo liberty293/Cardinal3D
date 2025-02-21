@@ -33,11 +33,11 @@ Light_Sample Spot_Light::sample(Vec3 from) const {
     return ret;
 }
 
-bool Rect_Light::on_light(Vec3 from) const {
-    bool on_x = (from.x < size.x / 2.0f) && (from.x > - size.x / 2.0f);
-    bool on_y = (from.y < EPS_F) && (from.y > - EPS_F);
-    bool on_z = (from.z < size.y / 2.0f) && (from.z > - size.y / 2.0f);
-    return on_x && on_y && on_z;
+bool Rect_Light::on_light(Vec3 from, Vec3 hit) const {
+    bool on_x = (hit.x < size.x) && (hit.x > - size.x);
+    bool on_y = (hit.y < EPS_F) && (hit.y > - EPS_F);
+    bool on_z = (hit.z < size.y) && (hit.z > - size.y);
+    return on_x && on_y && on_z && from.y <= 0;
 }
 
 Light_Sample Rect_Light::sample(Vec3 from) const {
