@@ -87,6 +87,8 @@ Spectrum Pathtracer::trace_ray(const Ray& ray) {
     // queries before you implement real lighting in Tasks 4 and 5. (i.e, anything that gets hit is not black.)
     // You should change this to (0,0,0) and accumulate the direct and indirect lighting computed below.
     Spectrum radiance_out = Spectrum(0.0f);
+    for (const auto& light : lights)
+        radiance_out += light.direct_hit(hit.position);
     {
 
         // lambda function to sample a light. Called in loop below.

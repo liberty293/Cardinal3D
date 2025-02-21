@@ -46,7 +46,7 @@ Trace Triangle::hit(const Ray& ray) const {
     ret.normal = Vec3{};   // what was the surface normal at the intersection?
                            // (this should be interpolated between the three vertex normals)
     float denom = dot(cross(e1, ray.dir),e2);
-    if(denom <= 1e-6)
+    if(denom <= 1e-6 && denom >= -1e-6)
     {
         ret.hit = false; 
     }

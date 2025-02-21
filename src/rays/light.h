@@ -64,6 +64,7 @@ struct Rect_Light {
     }
 
     Light_Sample sample(Vec3 from) const;
+    bool on_light(Vec3 from) const;
 
     Spectrum radiance;
     Vec2 size;
@@ -93,6 +94,18 @@ public:
     Light& operator=(const Light& src) = delete;
     Light& operator=(Light&& src) = default;
     Light(Light&& src) = default;
+
+    Spectrum direct_hit(Vec3 from) const {
+        const Light* ptr = this;
+        return std::visit(overloaded{[](const Directional_Light&) { return Spectrum(); },
+                                     [](const Point_Light&) { return Spectrum(); },
+                                     [](const Spot_Light&) { return Spectrum(); },
+                                     [&from, &ptr](const Rect_Light& r_l) {
+                                        if (ptr->has_trans) from = ptr->itrans * from;
+                                        return r_l.on_light(from) ? r_l.radiance : Spectrum();
+                                    }},
+                          underlying);
+    }
 
     Light_Sample sample(Vec3 from) const {
         if(has_trans) from = itrans * from;
