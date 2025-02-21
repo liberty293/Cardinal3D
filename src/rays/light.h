@@ -21,6 +21,8 @@ struct Light_Sample {
 
     void transform(const Mat4& T) {
         direction = T.rotate(direction);
+        distance *= direction.norm();
+        direction = direction.unit();
     }
 };
 
