@@ -134,7 +134,7 @@ void BVH<Primitive>::build_subtree(size_t node_addr, size_t max_leaf_size) {
     }
     std::vector<Primitive> left, right;
     for (size_t i = 0; i < n.size; ++i) {
-        if (best_bin_cnt[i] <= best_split)
+        if (best_bin_cnt[i] < best_split)
             left.push_back(std::move(primitives[n.start + i]));
         else
             right.push_back(std::move(primitives[n.start + i]));
