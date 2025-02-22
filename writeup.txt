@@ -1,8 +1,8 @@
 Team members: Elizabeth Childs (elchilds), Yicheng Quian (pratherc)
 
-We have implemented all the basic operations, and the following advanced operations:
-* Boundary edge collapse
-* Erase vertex
-* Erase edge
+We have implemented all the basic tasks, and the following advanced tasks:
+* Ray-Sphere intersection
+* Task 5: Global illumination path tracing with Russian roulette
+* Transmissive surfaces, w/ transmission given by the Fresnel equations
 
-We implemented a function `edge_collapsable` to check whether collapsing an edge will result in an unsatisfying mesh. This function is used by `simplify` to skip edges that should not be collapsed
+Render the cornell box (cbox) scene and you should be able to verify all the advanced tasks
