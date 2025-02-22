@@ -91,6 +91,10 @@ struct Spectrum {
         return r != v.r || g != v.g || b != v.b;
     }
 
+    float max_component() const {
+        return std::max(r, std::max(g, b));
+    }
+
     float luma() const {
         return 0.2126f * r + 0.7152f * g + 0.0722f * b;
     }

@@ -155,12 +155,21 @@ Spectrum Pathtracer::trace_ray(const Ray& ray) {
     // (2) Randomly select a new ray direction (it may be reflection or transmittance
     // ray depending on surface type) using bsdf.sample()
     BSDF_Sample in_sample = bsdf.sample(out_dir);
-
+    radiance_out += in_sample.emissive;
+    
     // (3) Compute the throughput of the recursive ray. This should be the current ray's
     // throughput scaled by the BSDF attenuation, cos(theta), and BSDF sample PDF.
     // Potentially terminate the path using Russian roulette as a function of the new throughput.
     // Note that allowing the termination probability to approach 1 may cause extra speckling.
-    Spectrum throughput = in_sample.attenuation * in_sample.direction.y / in_sample.pdf;
+    Spectrum throughput;
+    if (bsdf.is_discrete())
+        throughput = in_sample.attenuation / in_sample.pdf;
+    else
+        throughput = in_sample.attenuation * in_sample.direction.y / in_sample.pdf;
+    float q = std::min(std::max(1 - throughput.max_component(), 0.0f), 0.8f);
+    if (RNG::unit() < q)
+        return radiance_out;
+    throughput = throughput / (1 - q);
 
     // (4) Create new scene-space ray and cast it to get incoming light. As with shadow rays, you
     // should modify time_bounds so that the ray does not intersect at time = 0. Remember to
@@ -171,7 +180,7 @@ Spectrum Pathtracer::trace_ray(const Ray& ray) {
 
     // (5) Add contribution due to incoming light with proper weighting. Remember to add in
     // the BSDF sample emissive term.
-    return radiance_out + radiance_recursive * throughput + in_sample.emissive;
+    return radiance_out + radiance_recursive * throughput;
 }
 
 } // namespace PT
