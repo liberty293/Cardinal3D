@@ -39,14 +39,14 @@ Trace Sphere::hit(const Ray& ray) const {
 
     float t1 = -b + sqrt(b*b-c);
     float t2 = -b - sqrt(b*b-c);
-    float tmin = t1 < t2 ? t1:t2;
-    float tmax = tmin==t1? t2:t1;
+    float tmin = t1 < t2 ? t1 : t2;
+    float tmax = t1 < t2 ? t2 : t1;
     if(tmin < ray.dist_bounds.y && tmin > ray.dist_bounds.x) //closest point and in bounds
     {
         ret.hit = true;
         ret.distance = tmin;
         ret.position = ray.point + ray.dir*tmin;
-        ret.normal = ret.position.normalize(); //from the origin to the point out of sphere
+        ret.normal = ret.position.unit(); //from the origin to the point out of sphere
         ray.dist_bounds.y = tmin;
         return ret;
     }
@@ -55,7 +55,7 @@ Trace Sphere::hit(const Ray& ray) const {
         ret.hit = true;
         ret.distance = tmax;
         ret.position = ray.point + ray.dir*tmax;
-        ret.normal = ret.position.normalize(); //from the origin to the point out of sphere
+        ret.normal = ret.position.unit(); //from the origin to the point out of sphere
         ray.dist_bounds.y = tmax;
         return ret;
     }
