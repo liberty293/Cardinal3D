@@ -6,6 +6,7 @@
 
 #include "../geometry/util.h"
 #include "../scene/renderer.h"
+#include "../scene/material.h"
 
 namespace Gui {
 
@@ -876,6 +877,25 @@ void Manager::UInew_obj(Undo& undo) {
         }
         ImGui::PopID();
     }
+
+    ImGui::Separator();
+
+    if(ImGui::CollapsingHeader("Square Portal")) {
+        ImGui::PushID(idx++);
+        static float R = 1.0f;
+        ImGui::SliderFloat("Side Length", &R, 0.01f, 10.0f, "%.2f");
+        if (ImGui::Button("Add")) {
+            GL::Mesh gmesh = Util::square_mesh(R / 2.0f);
+            Halfedge_Mesh hm;
+            hm.from_mesh(gmesh);
+            Scene_Object& obj = undo.add_obj(std::move(hm), "Square");
+            Material portal_mat;
+            portal_mat.opt.type = Material_Type::portal;
+            obj.material = std::move(portal_mat);
+        }
+        ImGui::PopID();
+    }
+
     ImGui::End();
 }
 

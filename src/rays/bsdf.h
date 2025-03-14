@@ -85,6 +85,16 @@ struct BSDF_Diffuse {
     Samplers::Hemisphere::Uniform sampler;
 };
 
+struct BSDF_Portal {
+
+    BSDF_Portal(int partner_id) : partner_id(partner_id) {}
+
+    BSDF_Sample sample(Vec3 out_dir) const;
+    Spectrum evaluate(Vec3 out_dir, Vec3 in_dir) const;
+
+    int partner_id;
+};
+
 class BSDF {
 public:
     BSDF(BSDF_Lambertian&& b) : underlying(std::move(b)) {
@@ -96,6 +106,8 @@ public:
     BSDF(BSDF_Diffuse&& b) : underlying(std::move(b)) {
     }
     BSDF(BSDF_Refract&& b) : underlying(std::move(b)) {
+    }
+    BSDF(BSDF_Portal&& b) : underlying(std::move(b)) {
     }
 
     BSDF(const BSDF& src) = delete;
@@ -119,7 +131,8 @@ public:
                                      [](const BSDF_Mirror&) { return true; },
                                      [](const BSDF_Glass&) { return true; },
                                      [](const BSDF_Diffuse&) { return false; },
-                                     [](const BSDF_Refract&) { return true; }},
+                                     [](const BSDF_Refract&) { return true; },
+                                     [](const BSDF_Portal&) { return true; }},
                           underlying);
     }
 
@@ -128,12 +141,13 @@ public:
                                      [](const BSDF_Mirror&) { return false; },
                                      [](const BSDF_Glass&) { return true; },
                                      [](const BSDF_Diffuse&) { return false; },
-                                     [](const BSDF_Refract&) { return true; }},
+                                     [](const BSDF_Refract&) { return true; },
+                                     [](const BSDF_Portal&) { return true; }},
                           underlying);
     }
 
 private:
-    std::variant<BSDF_Lambertian, BSDF_Mirror, BSDF_Glass, BSDF_Diffuse, BSDF_Refract> underlying;
+    std::variant<BSDF_Lambertian, BSDF_Mirror, BSDF_Glass, BSDF_Diffuse, BSDF_Refract, BSDF_Portal> underlying;
 };
 
 Vec3 reflect(Vec3 dir);

@@ -155,4 +155,16 @@ Spectrum BSDF_Refract::evaluate(Vec3 out_dir, Vec3 in_dir) const {
     return {};
 }
 
+BSDF_Sample BSDF_Portal::sample(Vec3 out_dir) const {
+    BSDF_Sample ret;
+    ret.direction = out_dir;
+    ret.attenuation = Spectrum(1.0);
+    ret.pdf = 1.0f;
+    return ret;
+}
+
+Spectrum BSDF_Portal::evaluate(Vec3 out_dir, Vec3 in_dir) const {
+    return {};
+}
+
 } // namespace PT
