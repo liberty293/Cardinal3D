@@ -509,6 +509,7 @@ static Material::Options load_material(aiMaterial* ai_mat, float& was_sphere) {
         mat.type = Material_Type::diffuse_light;
     } else if(type.find("portal") != std::string::npos) {
         mat.type = Material_Type::portal;
+        sscanf(type.c_str(), "portal %d %d", &mat.my_id, &mat.partner_id);
     } else {
         mat = Material::Options();
     }
@@ -1079,7 +1080,7 @@ static void write_material(aiMaterial* ai_mat, const Material::Options& opt, flo
         mat_name = "diffuse_light";
     } break;
     case Material_Type::portal: {
-        mat_name = "portal";
+        mat_name = "portal " + std::to_string(opt.my_id) + " " + std::to_string(opt.partner_id);
     } break;
     default: break;
     }
@@ -1104,6 +1105,8 @@ static void write_material(aiMaterial* ai_mat, const Material::Options& opt, flo
                         AI_MATKEY_COLOR_EMISSIVE);
     ai_mat->AddProperty(new float(opt.ior), 1, AI_MATKEY_REFRACTI);
     ai_mat->AddProperty(new float(opt.intensity), 1, AI_MATKEY_SHININESS);
+    ai_mat->AddProperty(new int(opt.my_id), 1, AI_MATKEY_BLEND_FUNC);
+    ai_mat->AddProperty(new int(opt.partner_id), 1, AI_MATKEY_OPACITY);
 }
 
 static void write_hemesh(aiMesh* ai_mesh, const Halfedge_Mesh& mesh) {

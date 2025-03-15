@@ -35,6 +35,8 @@ public:
         Spectrum emissive = Spectrum(1.0f);
         float intensity = 1.0f;
         float ior = 1.2f;
+        int my_id = 0;
+        int partner_id = 0;
     };
 
     struct Anim_Material {

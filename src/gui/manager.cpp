@@ -307,8 +307,8 @@ void Manager::material_edit_gui(Undo& undo, Scene_ID obj_id, Material& material)
         activate();
     } break;
     case Material_Type::portal: {
-        ImGui::InputInt("Own ID", (int *)(&opt.ior), 1, 10);
-        ImGui::InputInt("Partner ID", (int *)(&opt.intensity), 1, 10);
+        ImGui::InputInt("Own ID", &opt.my_id, 1, 10);
+        ImGui::InputInt("Partner ID", &opt.partner_id, 1, 10);
     } break;
     default: break;
     }
@@ -899,11 +899,8 @@ void Manager::UInew_obj(Scene& scene, Undo& undo) {
             Scene_Object& obj = undo.add_obj(std::move(hm), "Square");
             Material portal_mat;
             portal_mat.opt.type = Material_Type::portal;
-            // Horrible hack: Store own ID in float-point number `ior`
-            int my_id = obj.id();
-            portal_mat.opt.ior = *(float*)(&my_id);
-            // Horrible hack: Store integer partner ID in float-point number `intensity`
-            portal_mat.opt.intensity = *(float*)(&P);
+            portal_mat.opt.my_id = obj.id();
+            portal_mat.opt.partner_id = P;
             obj.material = std::move(portal_mat);
             obj.set_editable(false);
         }
