@@ -561,7 +561,7 @@ void Manager::UIsidebar(Scene& scene, Undo& undo, float menu_height, Camera& cam
 
             auto [name, cap] = obj.name();
             ImGui::InputText("##name", name, cap);
-
+            ImGui::SameLine();
             ImGui::Text("ID: %d", obj.id());
 
             bool is_selected = obj.id() == layout.selected();
