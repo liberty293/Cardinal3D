@@ -322,8 +322,8 @@ Mode Manager::item_options(Undo& undo, Mode cur_mode, Scene_Item& item, Pose& ol
 
     Pose& pose = item.pose();
 
-    auto sliders = [&](Widget_Type act, std::string label, Vec3& data, float sens) {
-        if(ImGui::DragFloat3(label.c_str(), data.data, sens)) widgets.active = act;
+    auto floatinp3 = [&](Widget_Type act, std::string label, Vec3& data) {
+        if(ImGui::InputFloat3(label.c_str(), data.data)) widgets.active = act;
         if(ImGui::IsItemActivated()) old_pose = pose;
         if(ImGui::IsItemDeactivatedAfterEdit() && old_pose != pose)
             undo.update_pose(item.id(), old_pose);
@@ -334,9 +334,9 @@ Mode Manager::item_options(Undo& undo, Mode cur_mode, Scene_Item& item, Pose& ol
         ImGui::Indent();
 
         pose.clamp_euler();
-        sliders(Widget_Type::move, "Position", pose.pos, 0.1f);
-        sliders(Widget_Type::rotate, "Rotation", pose.euler, 1.0f);
-        sliders(Widget_Type::scale, "Scale", pose.scale, 0.03f);
+        floatinp3(Widget_Type::move, "Position", pose.pos);
+        floatinp3(Widget_Type::rotate, "Rotation", pose.euler);
+        floatinp3(Widget_Type::scale, "Scale", pose.scale);
 
         widgets.action_button(Widget_Type::move, "Move [m]", false);
         widgets.action_button(Widget_Type::rotate, "Rotate [r]");
