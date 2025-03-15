@@ -1,0 +1,226 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no" ?>
+<COLLADA xmlns="http://www.collada.org/2005/11/COLLADASchema" version="1.4.1">
+  <asset>
+    <contributor>
+      <author>Assimp</author>
+      <authoring_tool>Assimp Exporter</authoring_tool>
+    </contributor>
+    <created>2025-03-15T12:32:03</created>
+    <modified>2025-03-15T12:32:03</modified>
+    <unit name="meter" meter="1" />
+    <up_axis>Y_UP</up_axis>
+  </asset>
+  <library_cameras>
+    <camera id="S3D-RENDER_CAM_NODE-camera" name="S3D-RENDER_CAM_NODE" >
+      <optics>
+        <technique_common>
+          <perspective>
+            <xfov sid="xfov">121.28449</xfov>
+            <aspect_ratio>1.7777778</aspect_ratio>
+            <znear sid="znear">0</znear>
+            <zfar sid="zfar">1</zfar>
+          </perspective>
+        </technique_common>
+      </optics>
+    </camera>
+    <camera id="S3D-ANIM_CAM_NODE-camera" name="S3D-ANIM_CAM_NODE" >
+      <optics>
+        <technique_common>
+          <perspective>
+            <xfov sid="xfov">121.28449</xfov>
+            <aspect_ratio>1.7777778</aspect_ratio>
+            <znear sid="znear">0</znear>
+            <zfar sid="zfar">1</zfar>
+          </perspective>
+        </technique_common>
+      </optics>
+    </camera>
+  </library_cameras>
+  <library_lights>
+    <light id="Rectangle_Light_15-S3D-AREA-15-light" name="Rectangle_Light_15-S3D-AREA-15" >
+      <technique_common>
+        <ambient>
+          <color sid="color">1 1 1</color>
+          <constant_attenuation>1</constant_attenuation>
+          <linear_attenuation>1</linear_attenuation>
+          <quadratic_attenuation>1</quadratic_attenuation>
+        </ambient>
+      </technique_common>
+    </light>
+    <light id="Rectangle_Light_16-S3D-AREA-16-light" name="Rectangle_Light_16-S3D-AREA-16" >
+      <technique_common>
+        <ambient>
+          <color sid="color">1 1 1</color>
+          <constant_attenuation>1</constant_attenuation>
+          <linear_attenuation>1</linear_attenuation>
+          <quadratic_attenuation>1</quadratic_attenuation>
+        </ambient>
+      </technique_common>
+    </light>
+  </library_lights>
+  <library_images>
+  </library_images>
+  <library_effects>
+    <effect id="lambertian-fx" name="lambertian">
+      <profile_COMMON>
+        <technique sid="standard">
+          <phong>
+            <emission>
+              <color sid="emission">1   1   1   1</color>
+            </emission>
+            <diffuse>
+              <color sid="diffuse">1   1   1   1</color>
+            </diffuse>
+            <shininess>
+              <float sid="shininess">1</float>
+            </shininess>
+            <reflective>
+              <color sid="reflective">1   1   1   1</color>
+            </reflective>
+            <transparent>
+              <color sid="transparent">1   1   1   1</color>
+            </transparent>
+            <transparency>
+              <float sid="transparency">0</float>
+            </transparency>
+            <index_of_refraction>
+              <float sid="index_of_refraction">1.2</float>
+            </index_of_refraction>
+          </phong>
+        </technique>
+      </profile_COMMON>
+    </effect>
+    <effect id="lambertian_1-fx" name="lambertian">
+      <profile_COMMON>
+        <technique sid="standard">
+          <phong>
+            <emission>
+              <color sid="emission">1   1   1   1</color>
+            </emission>
+            <diffuse>
+              <color sid="diffuse">1   1   1   1</color>
+            </diffuse>
+            <shininess>
+              <float sid="shininess">1</float>
+            </shininess>
+            <reflective>
+              <color sid="reflective">1   1   1   1</color>
+            </reflective>
+            <transparent>
+              <color sid="transparent">1   1   1   1</color>
+            </transparent>
+            <transparency>
+              <float sid="transparency">0</float>
+            </transparency>
+            <index_of_refraction>
+              <float sid="index_of_refraction">1.2</float>
+            </index_of_refraction>
+          </phong>
+        </technique>
+      </profile_COMMON>
+    </effect>
+  </library_effects>
+  <library_materials>
+    <material id="lambertian" name="lambertian">
+      <instance_effect url="#lambertian-fx"/>
+    </material>
+    <material id="lambertian_1" name="lambertian">
+      <instance_effect url="#lambertian_1-fx"/>
+    </material>
+  </library_materials>
+  <library_geometries>
+    <geometry id="Cube-S3D-13-FLIPPED_1" name="Cube-S3D-13-FLIPPED" >
+      <mesh>
+        <source id="Cube-S3D-13-FLIPPED_1-positions" name="Cube-S3D-13-FLIPPED_1-positions">
+          <float_array id="Cube-S3D-13-FLIPPED_1-positions-array" count="24"> 0.5 -0.5 -0.5 -0.5 0.5 -0.5 -0.5 -0.5 -0.5 0.5 0.5 -0.5 0.5 -0.5 0.5 0.5 0.5 0.5 -0.5 0.5 0.5 -0.5 -0.5 0.5 </float_array>
+          <technique_common>
+            <accessor count="8" offset="0" source="#Cube-S3D-13-FLIPPED_1-positions-array" stride="3">
+              <param name="X" type="float" />
+              <param name="Y" type="float" />
+              <param name="Z" type="float" />
+            </accessor>
+          </technique_common>
+        </source>
+        <vertices id="Cube-S3D-13-FLIPPED_1-vertices">
+          <input semantic="POSITION" source="#Cube-S3D-13-FLIPPED_1-positions" />
+        </vertices>
+        <polylist count="10" material="defaultMaterial">
+          <input offset="0" semantic="VERTEX" source="#Cube-S3D-13-FLIPPED_1-vertices" />
+          <vcount>3 3 3 3 3 3 3 3 3 3 </vcount>
+          <p>2 0 1 1 0 3 0 4 3 3 4 5 7 2 6 6 2 1 1 3 6 6 3 5 7 4 2 2 4 0 </p>
+        </polylist>
+      </mesh>
+    </geometry>
+    <geometry id="Cube-S3D-14-FLIPPED_1" name="Cube-S3D-14-FLIPPED" >
+      <mesh>
+        <source id="Cube-S3D-14-FLIPPED_1-positions" name="Cube-S3D-14-FLIPPED_1-positions">
+          <float_array id="Cube-S3D-14-FLIPPED_1-positions-array" count="24"> 0.5 -0.5 -0.5 -0.5 0.5 -0.5 -0.5 -0.5 -0.5 0.5 0.5 -0.5 0.5 -0.5 0.5 0.5 0.5 0.5 -0.5 0.5 0.5 -0.5 -0.5 0.5 </float_array>
+          <technique_common>
+            <accessor count="8" offset="0" source="#Cube-S3D-14-FLIPPED_1-positions-array" stride="3">
+              <param name="X" type="float" />
+              <param name="Y" type="float" />
+              <param name="Z" type="float" />
+            </accessor>
+          </technique_common>
+        </source>
+        <vertices id="Cube-S3D-14-FLIPPED_1-vertices">
+          <input semantic="POSITION" source="#Cube-S3D-14-FLIPPED_1-positions" />
+        </vertices>
+        <polylist count="10" material="defaultMaterial">
+          <input offset="0" semantic="VERTEX" source="#Cube-S3D-14-FLIPPED_1-vertices" />
+          <vcount>3 3 3 3 3 3 3 3 3 3 </vcount>
+          <p>2 0 1 1 0 3 0 4 3 3 4 5 7 2 6 6 2 1 1 3 6 6 3 5 7 4 2 2 4 0 </p>
+        </polylist>
+      </mesh>
+    </geometry>
+  </library_geometries>
+  <library_controllers>
+  </library_controllers>
+  <library_visual_scenes>
+    <visual_scene id="node" name="">
+      <node id="Cube-S3D-13-FLIPPED" name="Cube-S3D-13-FLIPPED" type="NODE">
+        <matrix sid="matrix">1 0 0 0.60000002 0 1 0 0 0 0 1 0 0 0 0 1</matrix>
+        <instance_geometry url="#Cube-S3D-13-FLIPPED_1">
+          <bind_material>
+            <technique_common>
+              <instance_material symbol="defaultMaterial" target="#lambertian">
+              </instance_material>
+            </technique_common>
+          </bind_material>
+        </instance_geometry>
+      </node>
+      <node id="Cube-S3D-14-FLIPPED" name="Cube-S3D-14-FLIPPED" type="NODE">
+        <matrix sid="matrix">1 0 0 -0.60000002 0 1 0 0 0 0 1 0 0 0 0 1</matrix>
+        <instance_geometry url="#Cube-S3D-14-FLIPPED_1">
+          <bind_material>
+            <technique_common>
+              <instance_material symbol="defaultMaterial" target="#lambertian_1">
+              </instance_material>
+            </technique_common>
+          </bind_material>
+        </instance_geometry>
+      </node>
+      <node id="Rectangle_Light_15-S3D-AREA-15" name="Rectangle_Light_15-S3D-AREA-15" type="NODE">
+        <matrix sid="matrix">0.25 0 0 -0.60000002 0 0.25 0 0.495 0 0 0.25 0 0 0 0 1</matrix>
+        <instance_light url="#Rectangle_Light_15-S3D-AREA-15-light"/>
+      </node>
+      <node id="Rectangle_Light_16-S3D-AREA-16" name="Rectangle_Light_16-S3D-AREA-16" type="NODE">
+        <matrix sid="matrix">0.25 0 0 0.60000002 0 0.25 0 0.495 0 0 0.25 0 0 0 0 1</matrix>
+        <instance_light url="#Rectangle_Light_16-S3D-AREA-16-light"/>
+      </node>
+      <node id="S3D-ANIM_CAM_NODE" name="S3D-ANIM_CAM_NODE" type="NODE">
+        <matrix sid="matrix">0.70710677 -0.50000006 0.5 2.5 0 0.70710677 0.70710683 3.5355344 -0.70710683 -0.5 0.49999997 2.4999995 0 0 0 1</matrix>
+        <instance_camera url="#S3D-ANIM_CAM_NODE-camera"/>
+      </node>
+      <node id="S3D-RENDER_CAM_NODE" name="S3D-RENDER_CAM_NODE" type="NODE">
+        <matrix sid="matrix">0.70710677 -0.50000006 0.5 2.5 0 0.70710677 0.70710683 3.5355344 -0.70710683 -0.5 0.49999997 2.4999995 0 0 0 1</matrix>
+        <instance_camera url="#S3D-RENDER_CAM_NODE-camera"/>
+      </node>
+    </visual_scene>
+  </library_visual_scenes>
+  <library_animations>
+  </library_animations>
+  <scene>
+    <instance_visual_scene url="#node" />
+  </scene>
+</COLLADA>

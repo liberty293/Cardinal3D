@@ -759,9 +759,12 @@ std::string Scene::load(Scene::Load_Opts loader, Undo& undo, Gui::Manager& gui, 
 
         Pose p;
         {
-            Mat4 trans = aiMat(node_transform(node));
-            p.pos = trans * aiVec(ai_light->mPosition);
-            p.euler = trans.to_euler();
+            aiMatrix4x4 transform = node_transform(node);
+            aiVector3D ascale, arot, apos;
+            transform.Decompose(ascale, arot, apos);
+            p.pos = aiVec(apos);
+            p.euler = aiVec(arot);
+            p.scale = aiVec(ascale);
         }
 
         bool was_exported_from_s3d = false;
