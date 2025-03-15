@@ -324,9 +324,6 @@ Mode Manager::item_options(Undo& undo, Mode cur_mode, Scene_Item& item, Pose& ol
 
     auto floatinp3 = [&](Widget_Type act, std::string label, Vec3& data) {
         if(ImGui::InputFloat3(label.c_str(), data.data)) widgets.active = act;
-        if(ImGui::IsItemActivated()) old_pose = pose;
-        if(ImGui::IsItemDeactivatedAfterEdit() && old_pose != pose)
-            undo.update_pose(item.id(), old_pose);
     };
 
     if(!(item.is<Scene_Light>() && item.get<Scene_Light>().is_env()) &&
