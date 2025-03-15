@@ -214,6 +214,12 @@ public:
     std::optional<VertexRef> collapse_edge(EdgeRef e);
 
     /*
+        Delete a face (i.e. turning the face into a boundary face)
+        Return a pointer to a vertex on the original face
+    */
+    std::optional<VertexRef> erase_face(FaceRef f);
+
+    /*
         Collapse a face, returning a pointer to the collapsed vertex
     */
     std::optional<VertexRef> collapse_face(FaceRef f);

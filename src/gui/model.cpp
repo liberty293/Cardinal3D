@@ -727,7 +727,15 @@ std::string Model::UIsidebar(Undo& undo, Widgets& widgets, Scene_Maybe obj_opt, 
                         return {};
                     },
                     [&](Halfedge_Mesh::FaceRef face) -> std::string {
-                        if(ImGui::Button("Collapse")) {
+                        if(ImGui::Button("Erase [del]")) {
+                            mesh.copy_to(before);
+                            return update_mesh(
+                                undo, obj, std::move(before), face,
+                                [](Halfedge_Mesh& m, Halfedge_Mesh::ElementRef face) {
+                                    return m.erase_face(std::get<Halfedge_Mesh::FaceRef>(face));
+                                });
+                        }
+                        if(Manager::wrap_button("Collapse")) {
                             mesh.copy_to(before);
                             return update_mesh(
                                 undo, obj, std::move(before), face,
