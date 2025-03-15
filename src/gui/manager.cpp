@@ -307,7 +307,8 @@ void Manager::material_edit_gui(Undo& undo, Scene_ID obj_id, Material& material)
         activate();
     } break;
     case Material_Type::portal: {
-        ImGui::InputInt("Portal Partner", (int *)(&opt.intensity), 1, 10);
+        ImGui::InputInt("Own ID", (int *)(&opt.ior), 1, 10);
+        ImGui::InputInt("Partner ID", (int *)(&opt.intensity), 1, 10);
     } break;
     default: break;
     }

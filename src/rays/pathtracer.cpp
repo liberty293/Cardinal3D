@@ -98,7 +98,7 @@ void Pathtracer::build_scene(Scene& layout_scene) {
     std::vector<Object> obj_list;
     materials.clear();
     mat_cache.clear();
-    trans_cache.clear();
+    portal_cache.clear();
 
     layout_scene.for_items([&, this](Scene_Item& item) {
         if(item.is<Scene_Object>()) {
@@ -123,10 +123,14 @@ void Pathtracer::build_scene(Scene& layout_scene) {
             case Material_Type::diffuse_light: {
                 materials.push_back(BSDF(BSDF_Diffuse(obj.material.emissive())));
             } break;
+            case Material_Type::portal: {
+                int my_id = *(int *)(&obj.material.opt.ior);
+                int partner_id = *(float *)(&obj.material.opt.intensity);
+                materials.push_back(BSDF(BSDF_Portal(my_id, partner_id)));
+                portal_cache[my_id] = obj.pose.transform();
+            } break;
             default: return;
             }
-
-            trans_cache[obj.id()] = obj.pose.transform();
 
             thread_pool.enqueue([&, idx]() {
                 if(obj.is_shape()) {

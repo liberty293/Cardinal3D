@@ -60,8 +60,24 @@ Spectrum Pathtracer::trace_ray(const Ray& ray) {
         return {};
     }
 
-    // If we're using a two-sided material, treat back-faces the same as front-faces
     const BSDF& bsdf = materials[hit.material];
+
+    // If we're using a portal material, proceed with special treatment
+    if(std::holds_alternative<BSDF_Portal>(bsdf.get_underlying())) {
+        const BSDF_Portal& bsdf_p = std::get<BSDF_Portal>(bsdf.get_underlying());
+        Mat4 transform = portal_cache[bsdf_p.partner_id] * portal_cache[bsdf_p.my_id].inverse();
+        // debug
+        if (bsdf_p.partner_id == 14)
+            ray.dist_bounds = Vec2(0, 0);
+        Vec3 out_position = transform * hit.position;
+        Vec3 out_dir = transform.rotate(ray.dir);
+        out_dir = out_dir.unit();
+        Ray rec(out_position, out_dir);
+        rec.depth = ray.depth + 1; rec.dist_bounds.x = EPS_F;
+        return trace_ray(rec);
+    }
+
+    // If we're using a two-sided material, treat back-faces the same as front-faces
     if(!bsdf.is_sided() && dot(hit.normal, ray.dir) > 0.0f) {
         hit.normal = -hit.normal;
     }

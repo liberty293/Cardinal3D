@@ -66,7 +66,7 @@ private:
     std::vector<BSDF> materials;
     std::optional<Env_Light> env_light; // only one of these per scene
     std::unordered_map<Scene_ID, size_t> mat_cache;
-    std::unordered_map<Scene_ID, Mat4> trans_cache;
+    std::unordered_map<Scene_ID, Mat4> portal_cache;
 
     Camera camera;
     size_t out_w, out_h, n_samples, n_area_samples, max_depth;

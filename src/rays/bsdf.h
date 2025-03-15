@@ -87,12 +87,12 @@ struct BSDF_Diffuse {
 
 struct BSDF_Portal {
 
-    BSDF_Portal(int partner_id) : partner_id(partner_id) {}
+    BSDF_Portal(int my_id, int partner_id) : my_id(my_id), partner_id(partner_id) {}
 
     BSDF_Sample sample(Vec3 out_dir) const;
     Spectrum evaluate(Vec3 out_dir, Vec3 in_dir) const;
 
-    int partner_id;
+    int my_id, partner_id;
 };
 
 class BSDF {
@@ -145,6 +145,8 @@ public:
                                      [](const BSDF_Portal&) { return true; }},
                           underlying);
     }
+
+    auto get_underlying() const { return underlying; };
 
 private:
     std::variant<BSDF_Lambertian, BSDF_Mirror, BSDF_Glass, BSDF_Diffuse, BSDF_Refract, BSDF_Portal> underlying;
