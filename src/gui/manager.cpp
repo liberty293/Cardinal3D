@@ -306,6 +306,9 @@ void Manager::material_edit_gui(Undo& undo, Scene_ID obj_id, Material& material)
                          "%.2f");
         activate();
     } break;
+    case Material_Type::portal: {
+        ImGui::InputInt("Portal Partner", (int *)(&opt.intensity), 1, 10);
+    } break;
     default: break;
     }
 
@@ -561,6 +564,8 @@ void Manager::UIsidebar(Scene& scene, Undo& undo, float menu_height, Camera& cam
             auto [name, cap] = obj.name();
             ImGui::InputText("##name", name, cap);
 
+            ImGui::Text("ID: %d", obj.id());
+
             bool is_selected = obj.id() == layout.selected();
             ImGui::SameLine();
             if(ImGui::Checkbox("##selected", &is_selected)) {
@@ -628,7 +633,7 @@ void Manager::UIsidebar(Scene& scene, Undo& undo, float menu_height, Camera& cam
             new_obj_focus = false;
         }
         if(new_obj_window) {
-            UInew_obj(undo);
+            UInew_obj(scene, undo);
         }
         if(new_light_focus) {
             ImGui::SetNextWindowFocus();
@@ -776,7 +781,7 @@ void Manager::UInew_light(Scene& scene, Undo& undo) {
     ImGui::End();
 }
 
-void Manager::UInew_obj(Undo& undo) {
+void Manager::UInew_obj(Scene& scene, Undo& undo) {
 
     unsigned int idx = 0;
 
@@ -884,6 +889,8 @@ void Manager::UInew_obj(Undo& undo) {
         ImGui::PushID(idx++);
         static float R = 1.0f;
         ImGui::SliderFloat("Side Length", &R, 0.01f, 10.0f, "%.2f");
+        static int P = 0;
+        ImGui::InputInt("Portal Partner", &P, 1, 10);
         if (ImGui::Button("Add")) {
             GL::Mesh gmesh = Util::square_mesh(R / 2.0f);
             Halfedge_Mesh hm;
@@ -891,7 +898,13 @@ void Manager::UInew_obj(Undo& undo) {
             Scene_Object& obj = undo.add_obj(std::move(hm), "Square");
             Material portal_mat;
             portal_mat.opt.type = Material_Type::portal;
+            // Horrible hack: Store own ID in float-point number `ior`
+            int my_id = obj.id();
+            portal_mat.opt.ior = *(float*)(&my_id);
+            // Horrible hack: Store integer partner ID in float-point number `intensity`
+            portal_mat.opt.intensity = *(float*)(&P);
             obj.material = std::move(portal_mat);
+            obj.set_editable(false);
         }
         ImGui::PopID();
     }

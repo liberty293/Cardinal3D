@@ -86,6 +86,10 @@ bool Scene_Object::is_editable() const {
     return editable && opt.shape_type == PT::Shape_Type::none;
 }
 
+void Scene_Object::set_editable(bool editable) const {
+    this->editable = editable;
+}
+
 void Scene_Object::copy_mesh(Halfedge_Mesh& out) {
     halfedge.copy_to(out);
 }

@@ -82,7 +82,7 @@ private:
     void UIstudent();
     void UIsettings();
     void UIsavefirst(Scene& scene, Undo& undo);
-    void UInew_obj(Undo& undo);
+    void UInew_obj(Scene& scene, Undo& undo);
     void UInew_light(Scene& scene, Undo& undo);
     float UImenu(Scene& scene, Undo& undo);
     void UIsidebar(Scene& scene, Undo& undo, float menu_height, Camera& cam);

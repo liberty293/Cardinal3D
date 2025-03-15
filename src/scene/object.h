@@ -43,6 +43,7 @@ public:
 
     BBox bbox();
     bool is_editable() const;
+    void set_editable (bool editable) const;
     bool is_shape() const;
     void try_make_editable(PT::Shape_Type prev = PT::Shape_Type::none);
     void flip_normals();

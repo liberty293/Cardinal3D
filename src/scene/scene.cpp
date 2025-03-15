@@ -507,6 +507,8 @@ static Material::Options load_material(aiMaterial* ai_mat, float& was_sphere) {
         mat.type = Material_Type::glass;
     } else if(type.find("diffuse_light") != std::string::npos) {
         mat.type = Material_Type::diffuse_light;
+    } else if(type.find("portal") != std::string::npos) {
+        mat.type = Material_Type::portal;
     } else {
         mat = Material::Options();
     }
@@ -1075,6 +1077,9 @@ static void write_material(aiMaterial* ai_mat, const Material::Options& opt, flo
     } break;
     case Material_Type::diffuse_light: {
         mat_name = "diffuse_light";
+    } break;
+    case Material_Type::portal: {
+        mat_name = "portal";
     } break;
     default: break;
     }

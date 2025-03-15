@@ -98,6 +98,7 @@ void Pathtracer::build_scene(Scene& layout_scene) {
     std::vector<Object> obj_list;
     materials.clear();
     mat_cache.clear();
+    trans_cache.clear();
 
     layout_scene.for_items([&, this](Scene_Item& item) {
         if(item.is<Scene_Object>()) {
@@ -124,6 +125,8 @@ void Pathtracer::build_scene(Scene& layout_scene) {
             } break;
             default: return;
             }
+
+            trans_cache[obj.id()] = obj.pose.transform();
 
             thread_pool.enqueue([&, idx]() {
                 if(obj.is_shape()) {
