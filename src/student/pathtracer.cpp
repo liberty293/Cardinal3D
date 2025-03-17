@@ -64,6 +64,8 @@ Spectrum Pathtracer::trace_ray(const Ray& ray) {
 
     // If we're using a portal material, proceed with special treatment
     if(std::holds_alternative<BSDF_Portal>(bsdf.get_underlying())) {
+        if (ray.depth >= max_depth)
+            return Spectrum();
         const BSDF_Portal bsdf_p = std::get<BSDF_Portal>(bsdf.get_underlying());
         Mat4 transform = portal_cache[bsdf_p.partner_id] * portal_cache[bsdf_p.my_id].inverse();
         Vec3 out_position = transform * hit.position;
